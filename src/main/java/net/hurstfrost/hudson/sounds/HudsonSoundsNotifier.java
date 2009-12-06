@@ -186,7 +186,9 @@ public class HudsonSoundsNotifier extends Notifier {
 
 	@Extension
 	public static final class HudsonSoundsDescriptor extends BuildStepDescriptor<Publisher> {
-		private String	soundArchive = new File("src/main/webapp/sound-archive.zip").toURI().toString();
+		private static final String INTERNAL_ARCHIVE = HudsonSoundsNotifier.class.getResource("/sound-archive.zip").toString();
+		
+		private String	soundArchive = INTERNAL_ARCHIVE;
 		
 		private transient TreeMap<String, SoundBite>	sounds;
 
@@ -268,7 +270,11 @@ public class HudsonSoundsNotifier extends Notifier {
 		}
 
 		public void setSoundArchive(String archive) {
-			soundArchive = toUri(archive);
+			if (!StringUtils.isEmpty(archive)) {
+				soundArchive = toUri(archive);
+			} else {
+				soundArchive = INTERNAL_ARCHIVE;
+			}
 			
 			// Force index rebuild on next call
 			needsReindex = true;
