@@ -14,7 +14,6 @@ import hudson.util.FormValidation;
 
 import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URI;
@@ -43,12 +42,13 @@ import net.sf.json.JSONObject;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 
 /**
- * {@link Notifier} that makes Hudson speak using <a href="http://freetts.sourceforge.net/">FreeTTS</a>.
+ * {@link Notifier} that allows Hudson to play audio clips as build notifications..
  * 
  * @author Edward Hurst-Frost
  */
@@ -313,8 +313,8 @@ public class HudsonSoundsNotifier extends Notifier {
 		}
 
 		public FormValidation doTestSound(@QueryParameter String selectedSound) {
-			if (selectedSound == null) {
-    			return FormValidation.error("Please choose a test sound to play.");
+			if (StringUtils.isEmpty(selectedSound)) {
+    			return FormValidation.error("Please choose a sound to test.");
 			}
 			
 			try {
