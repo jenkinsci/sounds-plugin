@@ -3,7 +3,6 @@ package net.hurstfrost.hudson.sounds;
 import hudson.model.Hudson;
 import hudson.model.Result;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeMap;
@@ -27,7 +26,7 @@ public class HudsonSoundsNotifierTest extends HudsonTestCase {
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
-		TEST_ARCHIVE_URL = new File("src/test/resources/test-sound-archive.zip").toURI().toString();
+		TEST_ARCHIVE_URL = HudsonSoundsNotifier.class.getResource("/test-sound-archive.zip").toString();
 		descriptor = (HudsonSoundsDescriptor) Hudson.getInstance().getDescriptor("HudsonSoundsNotifier");
 		instance = new HudsonSoundsNotifier();
 	}
