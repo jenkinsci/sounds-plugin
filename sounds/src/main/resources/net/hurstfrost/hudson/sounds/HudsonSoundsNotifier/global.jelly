@@ -1,0 +1,22 @@
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler"
+	xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson"
+	xmlns:f="/lib/form">
+	<f:section title="Hudson Sounds">
+		<f:entry title="${%Sound archive location}" field="soundArchive" help="/plugin/sounds/help-globalConfig-archive.html">
+		     <f:textbox />
+		</f:entry>
+		<f:advanced>
+			<f:entry title="Test sound" field="sound">
+				<div class="warning">You must save any changes to the sound archive location above before trying to test sounds.</div>
+				<input type="hidden" name="_.selectedSound" />
+				<select class="setting-input" name="_.sound" onchange="findPrevious(this, function(){return true}).value = this.value">
+					<option value="">(choose a sound)</option>
+					<j:forEach var="s" items="${descriptor.sounds}">
+						<f:option value="${s.id}">${s.description}</f:option>
+					</j:forEach>
+				</select>
+			</f:entry>
+	    	<f:validateButton method="testSound" title="${%Test sound}" with="selectedSound"/>
+		</f:advanced>
+	</f:section>
+</j:jelly>

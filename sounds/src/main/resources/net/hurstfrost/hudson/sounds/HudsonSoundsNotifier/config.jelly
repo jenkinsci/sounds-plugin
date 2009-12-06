@@ -1,0 +1,61 @@
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+	<f:entry title="Sounds">
+		<f:repeatable name="soundEvents" var="se" items="${instance.soundEvents}" add="${%Add sound}">
+			<table class="center-align">
+				<f:entry title="">
+					<table>
+						<tr class="group-row">
+							<td class="pane-header blank">
+								${%On build result}
+							</td>
+							<td class="pane-header blank" colspan="5">
+								${%For previous build result}
+							</td>
+							<td class="pane-header blank">
+								${%Play sound}
+							</td>
+							<td rowspan="2" valign="middle" class="pane">
+								<input type="button" value="${%Delete}" class="repeatable-delete" style="margin-left: 1em;" />
+							</td>
+						</tr>
+						<tr>
+							<td>
+								<select class="setting-input" name="toResult">
+									<option value="">(choose a build result)</option>
+									<f:option value="NOT_BUILD" selected="${se.toBuildResult=='NOT_BUILD'}">Not built</f:option>
+									<f:option value="ABORTED" selected="${se.toBuildResult=='ABORTED'}">Aborted</f:option>
+									<f:option value="FAILURE" selected="${se.toBuildResult=='FAILURE'}">Failure</f:option>
+									<f:option value="UNSTABLE" selected="${se.toBuildResult=='UNSTABLE'}">Unstable</f:option>
+									<f:option value="SUCCESS" selected="${se.toBuildResult=='SUCCESS'}">Success</f:option>
+								</select>
+							</td>
+							<td>
+								NB:<f:checkbox field="fromNotBuilt" checked="${se.fromNotBuilt}"/>
+							</td>
+							<td>
+								Ab:<f:checkbox field="fromAborted" checked="${se.fromAborted}"/>
+							</td>
+							<td>
+								Fa:<f:checkbox field="fromFailure" checked="${se.fromFailure}"/>
+							</td>
+							<td>
+								Un:<f:checkbox field="fromUnstable" checked="${se.fromUnstable}"/>
+							</td>
+							<td>
+								Su:<f:checkbox field="fromSuccess" checked="${se.fromSuccess}"/>
+							</td>
+							<td>
+								<select class="setting-input" name="soundId">
+									<option value="">(choose a sound)</option>
+									<j:forEach var="s" items="${descriptor.sounds}">
+										<f:option selected="${se.soundId==s.id}" value="${s.id}">${s.description}</f:option>
+									</j:forEach>
+								</select>
+							</td>
+						</tr>
+					</table>
+				</f:entry>
+			</table>
+		</f:repeatable>
+	</f:entry>
+</j:jelly>
