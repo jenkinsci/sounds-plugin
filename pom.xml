@@ -3,7 +3,7 @@
   <parent>
     <groupId>org.jvnet.hudson.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>1.324</version><!-- which version of Hudson is this plugin built against? -->
+    <version>1.377</version><!-- which version of Jenkins is this plugin built against? -->
     <relativePath>../pom.xml</relativePath>
   </parent>
 	
@@ -15,12 +15,12 @@
     </developer>
   </developers>
 	
-  <url>http://wiki.hudson-ci.org/display/HUDSON/Hudson+Sounds+plugin</url>
+  <url>http://wiki.jenkins-ci.org/display/JENKINS/Jenkins+Sounds+plugin</url>
 
   <artifactId>sounds</artifactId>
   <version>0.3-SNAPSHOT</version>
   <packaging>hpi</packaging>
-  <name>Hudson Sounds plugin</name>
+  <name>Jenkins Sounds plugin</name>
 
   <!-- get every artifact through maven.glassfish.org, which proxies all the artifacts that we need -->
   <repositories>

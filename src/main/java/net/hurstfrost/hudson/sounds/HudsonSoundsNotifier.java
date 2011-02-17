@@ -15,6 +15,8 @@ import hudson.util.FormValidation;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -43,16 +45,19 @@ import net.sf.json.JSONObject;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.jfree.util.Log;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 
 /**
- * {@link Notifier} that allows Hudson to play audio clips as build notifications..
+ * {@link Notifier} that allows Jenkins to play audio clips as build notifications..
  * 
  * @author Edward Hurst-Frost
  */
 public class HudsonSoundsNotifier extends Notifier {
+	public static enum PLAY_METHOD { LOCAL, PIPE };
+	
 	public static class SoundEvent {
 		private final String soundId;
 
@@ -187,8 +192,18 @@ public class HudsonSoundsNotifier extends Notifier {
 	@Extension
 	public static final class HudsonSoundsDescriptor extends BuildStepDescriptor<Publisher> {
 		private static final String INTERNAL_ARCHIVE = HudsonSoundsNotifier.class.getResource("/sound-archive.zip").toString();
+
+		private static final int MAX_PIPE_TIMEOUT_SECS = 60;
+		private static final int MIN_PIPE_TIMEOUT_SECS = 5;
+		private static final int PIPE_TIMEOUT_EXTENDS_SECS = 5;
 		
 		private String	soundArchive = INTERNAL_ARCHIVE;
+		
+		private PLAY_METHOD	playMethod = PLAY_METHOD.LOCAL;
+		
+		private String	systemCommand;
+		
+		private int	pipeTimeoutSecs = MIN_PIPE_TIMEOUT_SECS;
 		
 		private transient TreeMap<String, SoundBite>	sounds;
 
@@ -281,6 +296,30 @@ public class HudsonSoundsNotifier extends Notifier {
 			sounds = null;
 		}
 
+		public PLAY_METHOD getPlayMethod() {
+			return playMethod;
+		}
+
+		public void setPlayMethod(PLAY_METHOD playMethod) {
+			this.playMethod = playMethod;
+		}
+
+		public String getSystemCommand() {
+			return systemCommand;
+		}
+
+		public void setSystemCommand(String systemCommand) {
+			this.systemCommand = systemCommand;
+		}
+
+		public int getPipeTimeoutSecs() {
+			return pipeTimeoutSecs;
+		}
+
+		public void setPipeTimeoutSecs(int pipeTimeout) {
+			this.pipeTimeoutSecs = Math.max(MIN_PIPE_TIMEOUT_SECS, Math.min(MAX_PIPE_TIMEOUT_SECS, pipeTimeout));
+		}
+
 		/**
 		 * @param archive
 		 * @return 
@@ -302,13 +341,24 @@ public class HudsonSoundsNotifier extends Notifier {
 		@Override
 		public boolean configure(final StaplerRequest req, JSONObject json) {
 			setSoundArchive(json.optString("soundArchive"));
+			JSONObject	playMethod = json.optJSONObject("playMethod");
+			if (playMethod != null) {
+				try {
+					PLAY_METHOD method = PLAY_METHOD.valueOf(playMethod.getString("value"));
+					setPlayMethod(method);
+				} catch (Exception e) {
+					Log.debug("Exception setting play method", e);
+				}
+			}
+			setSystemCommand(json.optString("systemCommand"));
+			setPipeTimeoutSecs(json.optInt("pipeTimeoutSecs"));
 			save();
 			return true;
 		}
 
 		@Override
 		public String getDisplayName() {
-			return "Hudson Sounds";
+			return "Jenkins Sounds";
 		}
 
 		@Override
@@ -318,20 +368,44 @@ public class HudsonSoundsNotifier extends Notifier {
 			return m;
 		}
 
-		public FormValidation doTestSound(@QueryParameter String selectedSound) {
+		public FormValidation doTestSound(@QueryParameter String selectedSound, @QueryParameter String soundArchive, @QueryParameter String playMethod, @QueryParameter String systemCommand, @QueryParameter int pipeTimeoutSecs) {
 			if (StringUtils.isEmpty(selectedSound)) {
     			return FormValidation.error("Please choose a sound to test.");
 			}
 			
+			setSoundArchive(soundArchive);
+			setPipeTimeoutSecs(pipeTimeoutSecs);
+			setSystemCommand(systemCommand);
+			
 			try {
 				playSound(selectedSound);
 			} catch (UnplayableSoundBiteException e) {
-    			return FormValidation.error("Failed to make sound '" + selectedSound + "' : " + e.toString());
+				String	message = e.getMessage();
+				if (StringUtils.isEmpty(message)) {
+					message = e.toString();
+				}
+    			return FormValidation.error("Failed to make sound '" + selectedSound + "' : " + message);
 			}
 			
-			return FormValidation.ok("Hudson made sound '" + selectedSound + "' successfully.");
+			return FormValidation.ok("Jenkins made sound '" + selectedSound + "' successfully.");
 		}
 		
+        public FormValidation doCheckPipeTimeout(@QueryParameter final int value) {
+        	if (value > MAX_PIPE_TIMEOUT_SECS || value < MIN_PIPE_TIMEOUT_SECS) {
+        		return FormValidation.warning(String.format("Pipe timeout is invalid, valid range %d - %ds.", MIN_PIPE_TIMEOUT_SECS, MAX_PIPE_TIMEOUT_SECS));
+        	}
+        	
+			return FormValidation.ok();
+        }
+        
+        public FormValidation doCheckSystemCommand(@QueryParameter final String systemCommand) {
+        	if (StringUtils.isEmpty(systemCommand)) {
+        		return FormValidation.warning(String.format("Enter a system command to pipe the sound file to"));
+        	}
+        	
+			return FormValidation.ok();
+        }
+        
         public FormValidation doCheckSoundArchive(@QueryParameter final String value) {
         	URI uri;
 			try {
@@ -432,19 +506,115 @@ public class HudsonSoundsNotifier extends Notifier {
 							}
 
 							final BufferedInputStream stream = new BufferedInputStream(zipInputStream);
-							playSoundBite(AudioSystem.getAudioInputStream(stream));
+							switch (playMethod) {
+							case LOCAL:
+								playSoundBite(AudioSystem.getAudioInputStream(stream));
+								break;
+							case PIPE:
+								playSoundBite(stream, systemCommand);
+							}
 							return;
 						}
 					} finally {
 						IOUtils.closeQuietly(zipInputStream);
 					}
         		} catch (Exception e) {
+        			e.printStackTrace();
         			throw new UnplayableSoundBiteException(soundBite, e);
         		}
         	}
         	
 			throw new UnplayableSoundBiteException("No such sound.");
         }
+        
+        private class ProcessKiller extends Thread {
+			private final Process p;
+			
+			private long	killAfter;
+			
+			private boolean	didDestroy;
+
+			public ProcessKiller(Process p, int	timeoutSecs) {
+				this.p = p;
+				killAfter = System.currentTimeMillis() + timeoutSecs * 1000;
+				start();
+			}
+			
+			@Override
+			public void run() {
+				try {
+					while (true) {
+						long	sleep = killAfter - System.currentTimeMillis();
+
+						if (sleep > 0) {
+							Thread.sleep(sleep);
+						}
+
+						if (System.currentTimeMillis() >= killAfter) {
+							try {
+								p.exitValue();
+							} catch (IllegalThreadStateException e) {
+								didDestroy = true;
+								p.destroy();
+							}
+							break;
+						}
+					}
+				} catch (InterruptedException e) {
+					// Ignored
+				}
+			}
+
+			public void progressing(int extendBySecs) {
+				killAfter = Math.max(killAfter, System.currentTimeMillis() + extendBySecs * 1000);
+			}
+			
+			public boolean didDestroy() {
+				return didDestroy;
+			}
+        }
+
+        private void playSoundBite(InputStream soundIn, String systemCommand) throws Exception {
+        	Process p = Runtime.getRuntime().exec(systemCommand);
+        	
+        	OutputStream soundOut = p.getOutputStream();
+
+        	ProcessKiller processKiller = new ProcessKiller(p, pipeTimeoutSecs);
+        	
+        	Exception	playException = null;
+
+			try {
+				byte[]	buffer = new byte[2<<16];
+				while (true) {
+					int	read = soundIn.read(buffer);
+					if (read <= 0) {
+						break;
+					}
+					soundOut.write(buffer, 0, read);
+					processKiller.progressing(PIPE_TIMEOUT_EXTENDS_SECS);
+				}
+				IOUtils.copy(soundIn, soundOut);
+				IOUtils.closeQuietly(soundOut);
+			} catch (IOException e) {
+				playException = e;
+			}
+			
+			processKiller.progressing(5);
+        	
+        	p.waitFor();
+        	
+        	if (processKiller.didDestroy()) {
+        		throw new RuntimeException("Sound pipe was unresponsive and was killed after " + pipeTimeoutSecs + "s");
+        	}
+        	
+        	if (p.exitValue() != 0) {
+        		throw new RuntimeException("Sound pipe process returned non-zero exit status (" + p.exitValue() + ")");
+        	}
+        	
+        	if (playException != null) {
+        		throw playException;
+        	}
+       }
 
 		protected void playSoundBite(AudioInputStream audioInputStream) throws LineUnavailableException, IOException {
 			Info info = new DataLine.Info(SourceDataLine.class, audioInputStream.getFormat());
