@@ -18,7 +18,7 @@
 	<url>http://wiki.jenkins-ci.org/display/JENKINS/Jenkins+Sounds+plugin</url>
 
 	<artifactId>sounds</artifactId>
-	<version>0.3</version>
+	<version>0.4-SNAPSHOT</version>
 	<packaging>hpi</packaging>
 	<name>Jenkins Sounds plugin</name>
 
@@ -41,9 +41,9 @@
 	</distributionManagement>
 
 	<scm>
-		<connection>scm:svn:https://svn.jenkins-ci.org/tags/sounds-0.3</connection>
-		<developerConnection>scm:svn:https://svn.jenkins-ci.org/tags/sounds-0.3</developerConnection>
-	  <url>https://hudson.dev.java.net/source/browse/hudson/tags/sounds-0.3</url>
+		<connection>scm:svn:https://svn.jenkins-ci.org/trunk/hudson/plugins/sounds/</connection>
+		<developerConnection>scm:svn:https://svn.jenkins-ci.org/trunk/hudson/plugins/sounds/</developerConnection>
+	  <url>https://hudson.dev.java.net/source/browse/hudson/trunk/hudson/plugins/sounds</url>
   </scm>
 
 	<repositories>
