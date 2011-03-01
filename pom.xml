@@ -16,12 +16,12 @@
 		</developer>
 	</developers>
 
-	<url>http://wiki.jenkins-ci.org/display/JENKINS/Jenkins+Sounds+plugin</url>
+	<url>http://wiki.jenkins-ci.org/display/JENKINS/Sounds+plugin</url>
 
 	<artifactId>sounds</artifactId>
 	<version>0.3-SNAPSHOT</version>
 	<packaging>hpi</packaging>
-	<name>Jenkins Sounds plugin</name>
+	<name>Sounds plugin</name>
 
 	<build>
 		<plugins>
