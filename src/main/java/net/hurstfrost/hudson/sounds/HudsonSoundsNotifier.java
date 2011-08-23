@@ -1,10 +1,12 @@
 package net.hurstfrost.hudson.sounds;
 
 import hudson.Extension;
+import hudson.ExtensionList;
 import hudson.Launcher;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.BuildListener;
+import hudson.model.Hudson;
 import hudson.model.Result;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
@@ -39,7 +41,6 @@ import javax.sound.sampled.SourceDataLine;
 import javax.sound.sampled.UnsupportedAudioFileException;
 import javax.sound.sampled.DataLine.Info;
 
-import net.hurstfrost.hudson.sounds.HudsonSoundsNotifier.HudsonSoundsDescriptor.SoundBite;
 import net.sf.json.JSONObject;
 
 import org.apache.commons.collections.CollectionUtils;
@@ -51,12 +52,12 @@ import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 
 /**
- * {@link Notifier} that allows Jenkins to play audio clips as build notifications..
+ * {@link Notifier} that allows Jenkins to play audio clips as build notifications.
  * 
  * @author Edward Hurst-Frost
  */
 public class HudsonSoundsNotifier extends Notifier {
-	public static enum PLAY_METHOD { LOCAL, PIPE };
+	public static enum PLAY_METHOD { LOCAL, PIPE, BROWSER };
 	
 	public static class SoundEvent {
 		private final String soundId;
@@ -66,7 +67,7 @@ public class HudsonSoundsNotifier extends Notifier {
 		private final Set<Result>	fromResults;
 		
 		@DataBoundConstructor
-		public SoundEvent(@SuppressWarnings("hiding") final String soundId, @SuppressWarnings("hiding") final String toResult, final boolean fromNotBuilt, final boolean fromAborted, final boolean fromFailure, final boolean fromUnstable, final boolean fromSuccess) {
+		public SoundEvent(final String soundId, final String toResult, final boolean fromNotBuilt, final boolean fromAborted, final boolean fromFailure, final boolean fromUnstable, final boolean fromSuccess) {
 			this.soundId = soundId;
 			Result	result = toResult!=null?Result.fromString(toResult):null;
 			
@@ -174,6 +175,11 @@ public class HudsonSoundsNotifier extends Notifier {
 		return (HudsonSoundsDescriptor) super.getDescriptor();
 	}
 
+	public static HudsonSoundsDescriptor getSoundsDescriptor() {
+		HudsonSoundsDescriptor hudsonSoundsDescriptor = Hudson.getInstance().getDescriptorByType(HudsonSoundsNotifier.HudsonSoundsDescriptor.class);
+		return hudsonSoundsDescriptor;
+	}
+    
 	@Override
 	public boolean perform(final AbstractBuild<?, ?> build, final Launcher launcher, final BuildListener listener) {
 		SoundEvent event = getSoundEventFor(build.getResult(), build.getPreviousBuild()!=null?build.getPreviousBuild().getResult():null);
@@ -266,18 +272,18 @@ public class HudsonSoundsNotifier extends Notifier {
 			return index;
 		}
 
-		protected static String getBiteName(String name) {
-			int	slash = name.lastIndexOf('/');
+		protected static String getBiteName(String path) {
+			int	slash = path.lastIndexOf('/');
 			if (slash != -1) {
-				name = name.substring(slash + 1);
+				path = path.substring(slash + 1);
 			}
 			
-			int dot = name.lastIndexOf('.');
+			int dot = path.lastIndexOf('.');
 			if (dot != -1) {
-				name = name.substring(0, dot);
+				path = path.substring(0, dot);
 			}
 			
-			return name;
+			return path;
 		}
 
 		public String getSoundArchive() {
@@ -364,13 +370,13 @@ public class HudsonSoundsNotifier extends Notifier {
 		@Override
 		public HudsonSoundsNotifier newInstance(StaplerRequest req, JSONObject formData) {
 			HudsonSoundsNotifier m = new HudsonSoundsNotifier();
-            m.setSoundEvents(req.bindJSONToList(SoundEvent.class, formData.get("soundEvents")));
+	        m.setSoundEvents(req.bindJSONToList(SoundEvent.class, formData.get("soundEvents")));
 			return m;
 		}
 
 		public FormValidation doTestSound(@QueryParameter String selectedSound, @QueryParameter String soundArchive, @QueryParameter String playMethod, @QueryParameter String systemCommand, @QueryParameter int pipeTimeoutSecs) {
 			if (StringUtils.isEmpty(selectedSound)) {
-    			return FormValidation.error("Please choose a sound to test.");
+				return FormValidation.error("Please choose a sound to test.");
 			}
 			
 			setSoundArchive(soundArchive);
@@ -384,67 +390,67 @@ public class HudsonSoundsNotifier extends Notifier {
 				if (StringUtils.isEmpty(message)) {
 					message = e.toString();
 				}
-    			return FormValidation.error("Failed to make sound '" + selectedSound + "' : " + message);
+				return FormValidation.error("Failed to make sound '" + selectedSound + "' : " + message);
 			}
 			
 			return FormValidation.ok("Jenkins made sound '" + selectedSound + "' successfully.");
 		}
 		
-        public FormValidation doCheckPipeTimeout(@QueryParameter final int value) {
-        	if (value > MAX_PIPE_TIMEOUT_SECS || value < MIN_PIPE_TIMEOUT_SECS) {
-        		return FormValidation.warning(String.format("Pipe timeout is invalid, valid range %d - %ds.", MIN_PIPE_TIMEOUT_SECS, MAX_PIPE_TIMEOUT_SECS));
-        	}
-        	
+	    public FormValidation doCheckPipeTimeout(@QueryParameter final int value) {
+	    	if (value > MAX_PIPE_TIMEOUT_SECS || value < MIN_PIPE_TIMEOUT_SECS) {
+	    		return FormValidation.warning(String.format("Pipe timeout is invalid, valid range %d - %ds.", MIN_PIPE_TIMEOUT_SECS, MAX_PIPE_TIMEOUT_SECS));
+	    	}
+	    	
 			return FormValidation.ok();
-        }
-        
-        public FormValidation doCheckSystemCommand(@QueryParameter final String systemCommand) {
-        	if (StringUtils.isEmpty(systemCommand)) {
-        		return FormValidation.warning(String.format("Enter a system command to pipe the sound file to"));
-        	}
-        	
+	    }
+	    
+	    public FormValidation doCheckSystemCommand(@QueryParameter final String systemCommand) {
+	    	if (StringUtils.isEmpty(systemCommand)) {
+	    		return FormValidation.warning(String.format("Enter a system command to pipe the sound file to"));
+	    	}
+	    	
 			return FormValidation.ok();
-        }
-        
-        public FormValidation doCheckSoundArchive(@QueryParameter final String value) {
-        	URI uri;
+	    }
+	    
+	    public FormValidation doCheckSoundArchive(@QueryParameter final String value) {
+	    	URI uri;
 			try {
 				uri = new URI(toUri(value));
 			} catch (URISyntaxException e) {
-    			return FormValidation.warning("The URL '" + value + "' is invalid (" + e.toString() + ")");
+				return FormValidation.warning("The URL '" + value + "' is invalid (" + e.toString() + ")");
 			}
-        	
-        	if (uri.getScheme().equals("file")) {
-        		if (new File(uri).exists()) {
-        			return FormValidation.ok();
-        		}
-        		return FormValidation.warning("File not found '" + uri + "'");
-        	} else if (uri.getScheme().equals("http")) {
-        		try {
-        			URLConnection openConnection = uri.toURL().openConnection();
+	    	
+	    	if (uri.getScheme().equals("file")) {
+	    		if (new File(uri).exists()) {
+	    			return FormValidation.ok();
+	    		}
+	    		return FormValidation.warning("File not found '" + uri + "'");
+	    	} else if (uri.getScheme().equals("http")) {
+	    		try {
+	    			URLConnection openConnection = uri.toURL().openConnection();
 
-        			if (openConnection instanceof HttpURLConnection) {
-        				HttpURLConnection httpUrlConnection = (HttpURLConnection) openConnection;
+	    			if (openConnection instanceof HttpURLConnection) {
+	    				HttpURLConnection httpUrlConnection = (HttpURLConnection) openConnection;
 
-        				final int responseCode = httpUrlConnection.getResponseCode();
-        				if (responseCode == HttpURLConnection.HTTP_OK) {
-        					return FormValidation.ok();
-        				}
-        				
-        				return FormValidation.warning("The URL '" + value + "' is invalid (" + httpUrlConnection.getResponseMessage() + ")");
-        			}
-        			
-        			return FormValidation.warning("The URL '" + value + "' is invalid");
-        		} catch (IOException e) {
-        			return FormValidation.warning("The URL '" + value + "' is invalid (" + e.toString() + ")");
-        		}
-        	} else {
-        		// Invalid URI
-        		return FormValidation.warning("The URI '" + value + "' is invalid");
-        	}
-        }
+	    				final int responseCode = httpUrlConnection.getResponseCode();
+	    				if (responseCode == HttpURLConnection.HTTP_OK) {
+	    					return FormValidation.ok();
+	    				}
+	    				
+	    				return FormValidation.warning("The URL '" + value + "' is invalid (" + httpUrlConnection.getResponseMessage() + ")");
+	    			}
+	    			
+	    			return FormValidation.warning("The URL '" + value + "' is invalid");
+	    		} catch (IOException e) {
+	    			return FormValidation.warning("The URL '" + value + "' is invalid (" + e.toString() + ")");
+	    		}
+	    	} else {
+	    		// Invalid URI
+	    		return FormValidation.warning("The URI '" + value + "' is invalid");
+	    	}
+	    }
 
-        public static class SoundBite {
+	    public static class SoundBite {
 			public final String	id;
 
 			public final String	entryName;
@@ -489,45 +495,97 @@ public class HudsonSoundsNotifier extends Notifier {
 				return getDescription();
 			}
 		}
+	    
+	    protected void playSoundFromUrl(URL url, Integer afterDelayMs) throws UnplayableSoundBiteException {
+	    	switch (playMethod) {
+	    		case BROWSER:
+	    			ExtensionList<SoundsAgentAction> soundsAgents = SoundsAgentAction.all();
+	    			if (soundsAgents.isEmpty()) {
+		    			throw new RuntimeException("No SoundsAgentAction Extension found.");
+	    			}
 
-        protected void playSound(String id) throws UnplayableSoundBiteException {
-        	SoundBite soundBite = getSound(id);
+	    			SoundsAgentAction soundsAgentAction = soundsAgents.get(0);
+    				soundsAgentAction.playSound(url, afterDelayMs);
+    				break;
+	    		default:
+	    	    	try {
+	    				playSoundFromInputStream(url.openStream());
+	    			} catch (Exception e) {
+	        			throw new UnplayableSoundBiteException(url.toString(), e);
+	    			}
+	    	}
+		}
 
-        	if (soundBite != null) {
-        		try {
-        			URL url = new URL(soundBite.url);
-        			URLConnection connection = url.openConnection();
-        			ZipInputStream zipInputStream = new ZipInputStream(connection.getInputStream());
-        			try {
-						ZipEntry entry;
-						while ((entry = zipInputStream.getNextEntry()) != null) {
-							if (!entry.getName().equals(soundBite.entryName)) {
-								continue;
+	    protected void playSound(String id) throws UnplayableSoundBiteException {
+	    	playSound(id, null);
+	    }
+	    
+	    protected void playSound(String id, Integer afterDelayMs) throws UnplayableSoundBiteException {
+	    	SoundBite soundBite = getSound(id);
+
+	    	if (soundBite != null) {
+	    		switch (playMethod) {
+		    		case BROWSER:
+		    			ExtensionList<SoundsAgentAction> soundsAgents = SoundsAgentAction.all();
+		    			if (!soundsAgents.isEmpty()) {
+		    				SoundsAgentAction soundsAgentAction = soundsAgents.get(0);
+	
+		    				soundsAgentAction.playSound(soundBite, afterDelayMs);
+		    				return;
+		    			}
+		    			throw new RuntimeException("No SoundsAgentAction Extension found.");
+		    		default:
+		    			InputStream soundBiteInputStream = null;
+		    			
+			    		try {
+							soundBiteInputStream = getSoundBiteInputStream(soundBite);
+			    			
+							if (soundBiteInputStream != null) {
+								playSoundFromInputStream(soundBiteInputStream);
+								return;
 							}
-
-							final BufferedInputStream stream = new BufferedInputStream(zipInputStream);
-							switch (playMethod) {
-							case LOCAL:
-								playSoundBite(AudioSystem.getAudioInputStream(stream));
-								break;
-							case PIPE:
-								playSoundBite(stream, systemCommand);
-							}
-							return;
-						}
-					} finally {
-						IOUtils.closeQuietly(zipInputStream);
-					}
-        		} catch (Exception e) {
-        			e.printStackTrace();
-        			throw new UnplayableSoundBiteException(soundBite, e);
-        		}
-        	}
-        	
+			    		} catch (Exception e) {
+			    			throw new UnplayableSoundBiteException(soundBite, e);
+			    		}
+	    		}
+	    	}
+	    	
 			throw new UnplayableSoundBiteException("No such sound.");
-        }
-        
-        private class ProcessKiller extends Thread {
+	    }
+
+		private void playSoundFromInputStream(InputStream soundBiteInputStream) throws LineUnavailableException, IOException, UnsupportedAudioFileException, Exception {
+			try {
+				switch (playMethod) {
+					case LOCAL:
+						playSoundBite(AudioSystem.getAudioInputStream(soundBiteInputStream));
+						break;
+					case PIPE:
+						playSoundBite(soundBiteInputStream, systemCommand);
+						break;
+				}
+			} finally {
+				IOUtils.closeQuietly(soundBiteInputStream);
+			}
+		}
+	    
+	    protected InputStream getSoundBiteInputStream(SoundBite soundBite) throws IOException {
+			URL url = new URL(soundBite.url);
+			URLConnection connection = url.openConnection();
+			ZipInputStream zipInputStream = new ZipInputStream(connection.getInputStream());
+
+			ZipEntry entry;
+			while ((entry = zipInputStream.getNextEntry()) != null) {
+				if (!entry.getName().equals(soundBite.entryName)) {
+					continue;
+				}
+
+				return new BufferedInputStream(zipInputStream);
+			}
+			
+			throw new IOException("Unable to get input stream for " + soundBite);
+	    }
+	    
+	    private class ProcessKiller extends Thread {
 			private final Process p;
 			
 			private long	killAfter;
@@ -572,16 +630,16 @@ public class HudsonSoundsNotifier extends Notifier {
 			public boolean didDestroy() {
 				return didDestroy;
 			}
-        }
+	    }
 
-        private void playSoundBite(InputStream soundIn, String systemCommand) throws Exception {
-        	Process p = Runtime.getRuntime().exec(systemCommand);
-        	
-        	OutputStream soundOut = p.getOutputStream();
+	    private void playSoundBite(InputStream soundIn, String systemCommand) throws Exception {
+	    	Process p = Runtime.getRuntime().exec(systemCommand);
+	    	
+	    	OutputStream soundOut = p.getOutputStream();
 
-        	ProcessKiller processKiller = new ProcessKiller(p, pipeTimeoutSecs);
-        	
-        	Exception	playException = null;
+	    	ProcessKiller processKiller = new ProcessKiller(p, pipeTimeoutSecs);
+	    	
+	    	Exception	playException = null;
 
 			try {
 				byte[]	buffer = new byte[2<<16];
@@ -600,21 +658,21 @@ public class HudsonSoundsNotifier extends Notifier {
 			}
 			
 			processKiller.progressing(5);
-        	
-        	p.waitFor();
-        	
-        	if (processKiller.didDestroy()) {
-        		throw new RuntimeException("Sound pipe was unresponsive and was killed after " + pipeTimeoutSecs + "s");
-        	}
-        	
-        	if (p.exitValue() != 0) {
-        		throw new RuntimeException("Sound pipe process returned non-zero exit status (" + p.exitValue() + ")");
-        	}
-        	
-        	if (playException != null) {
-        		throw playException;
-        	}
-       }
+	    	
+	    	p.waitFor();
+	    	
+	    	if (processKiller.didDestroy()) {
+	    		throw new RuntimeException("Sound pipe was unresponsive and was killed after " + pipeTimeoutSecs + "s");
+	    	}
+	    	
+	    	if (p.exitValue() != 0) {
+	    		throw new RuntimeException("Sound pipe process returned non-zero exit status (" + p.exitValue() + ")");
+	    	}
+	    	
+	    	if (playException != null) {
+	    		throw playException;
+	    	}
+	    }
 
 		protected void playSoundBite(AudioInputStream audioInputStream) throws LineUnavailableException, IOException {
 			Info info = new DataLine.Info(SourceDataLine.class, audioInputStream.getFormat());
@@ -633,25 +691,6 @@ public class HudsonSoundsNotifier extends Notifier {
 		}
 	}
 	
-	@SuppressWarnings("serial")
-	public static class UnplayableSoundBiteException extends Exception {
-		private final SoundBite soundBite;
-
-		public SoundBite getSoundBite() {
-			return soundBite;
-		}
-
-		public UnplayableSoundBiteException(SoundBite bite, Exception e) {
-			super(e);
-			soundBite = bite;
-		}
-
-		public UnplayableSoundBiteException(String message) {
-			super(message);
-			soundBite = null;
-		}
-	}
-
 	public List<SoundEvent> getSoundEvents() {
 		return soundEvents;
 	}
