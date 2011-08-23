@@ -11,7 +11,6 @@ import javax.sound.sampled.UnsupportedAudioFileException;
 
 import net.hurstfrost.hudson.sounds.HudsonSoundsNotifier.HudsonSoundsDescriptor;
 import net.hurstfrost.hudson.sounds.HudsonSoundsNotifier.SoundEvent;
-import net.hurstfrost.hudson.sounds.HudsonSoundsNotifier.UnplayableSoundBiteException;
 import net.hurstfrost.hudson.sounds.HudsonSoundsNotifier.HudsonSoundsDescriptor.SoundBite;
 
 import org.jvnet.hudson.test.HudsonTestCase;
@@ -72,7 +71,7 @@ public class HudsonSoundsNotifierTest extends HudsonTestCase {
 				descriptor.playSound("burp");
 			} catch (UnplayableSoundBiteException e) {
 				// As expected
-				assertTrue(e.getCause() instanceof UnsupportedAudioFileException);
+				assertTrue(e.toString(), e.getCause() instanceof UnsupportedAudioFileException);
 			}
 		} catch (Exception e) {
 			// No guarantee that machine running tests can play sounds, so swallow this.

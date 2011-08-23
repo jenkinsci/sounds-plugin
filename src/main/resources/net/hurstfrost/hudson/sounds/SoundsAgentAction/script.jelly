@@ -1,0 +1,73 @@
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler"><st:contentType value="text/javascript;charset=UTF-8" />
+ 	VERSION = null;
+ 	AUDIO_CAPABLE = audioCapable();
+ 	DEFAULT_REFRESH_PERIOD = 5000;
+  	FAIL_REFRESH_PERIOD = 60000;
+  	BROWSER_AUDIO_PREPARE_PERIOD = 300;
+  	
+  	function audioCapable() {
+  		var	audio = document.createElement('audio');
+  		
+  		if (!!audio.canPlayType) {
+  			return true;
+  		}
+  		
+  		return false;
+  	}
+  	
+  	function playSound(uri, afterMs) {
+  		if (!AUDIO_CAPABLE) {
+  			return false;
+  		}
+  		
+  		try {
+  			afterMs += BROWSER_AUDIO_PREPARE_PERIOD;	// Gives browser chance to load URL and prepare to play, helps sync.
+			var	audio = new Audio(uri);
+			if (afterMs > 0) {
+				setTimeout(playAudio.bind(this, audio), afterMs);
+			} else {
+				playAudio(audio);
+			}
+			return true;
+		} catch (e) {
+			return false;
+		}
+  	}
+  	
+  	function playAudio(audio) {
+  		if (console) { console.log('PLAY at ' + new Date().getTime()/1000.0); };
+		audio.play();
+  	}
+  	
+  	function pollForSounds(delay) {
+  		var f = function() {
+  			new Ajax.Request("${request.contextPath}/sounds/getSounds", {
+				parameters: { version: VERSION },
+  				onSuccess: function(rsp) {
+	  				var	soundsResponse, played;
+	  				try {
+  						eval("soundsResponse="+rsp.responseText);
+  						if (soundsResponse.v != undefined) {
+  							window.VERSION = soundsResponse.v;
+  						}
+  						if (soundsResponse.play) {
+  							played = playSound(soundsResponse.play, soundsResponse.d);
+  						}
+					  	pollForSounds(soundsResponse.p);
+  					} catch (e) {
+					  	pollForSounds(FAIL_REFRESH_PERIOD);
+  					}
+  				},
+  				onFailure: function() {
+				  	pollForSounds(FAIL_REFRESH_PERIOD);
+  				}
+  			});
+  		}
+  		if (console) console.log('scheduling poll in ' + (delay?delay:DEFAULT_REFRESH_PERIOD) + 'ms');
+		window.setTimeout(f, delay?delay:DEFAULT_REFRESH_PERIOD);
+  	}
+  	
+  	if (AUDIO_CAPABLE) {
+	  	pollForSounds();
+	}
+</j:jelly>
