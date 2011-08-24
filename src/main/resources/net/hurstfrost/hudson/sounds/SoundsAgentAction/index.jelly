@@ -38,31 +38,42 @@
 				</f:section>
 			</f:form>
 			<p>
-			<div class="help" style="display: block">
-			<h2>Troubleshooting tips:</h2>
-			If sound does not work some of the checks below might lead you to a solution:
-			<ul>
-				<li>Check the system is configured properly:</li>
-				<ul>
-					<li>Sound output option.</li>
+				<div class="help" style="display: block">
+					<h2>Playing sounds:</h2>
+					Sounds can be triggered using:
 					<ul>
-						<li>LOCAL HARDWARE - check your sound hardware and that it is detected by Java.</li>
-						<li>BROWSER - check Hudson URL (currently ${h.inferHudsonURL(request)}).</li>
+						<li>a Job build action</li>
+						<li>a Job notifier rule (e.g. on failure)</li>
+						<li>by making an HTTP request to ${h.inferHudsonURL(request)}sounds/playSound?src=&amp;lt;URL&gt; (currently only supported in HTML5 mode)</li>
 					</ul>
-				</ul>
-				<li>Check sound file formats.</li>
-				<ul>
-					<li>WAV is generally supported, but some WAV files use MPEG which is not.</li>
-					<li>AU and AIFF are normally supported.</li>
-					<li>MP3 is not widely supported.</li>
-					<li>OGG should work everywhere.</li>
-				</ul>
-				<li>Check browser capability.</li>
-				<ul>
-					<li>If using the BROWSER option, your browser must be HTML5 Audio capable.</li>
-				</ul>
-			</ul>
-			</div>
+					<h2>Troubleshooting tips:</h2>
+					If sound does not work some of the checks below might lead you to a solution:
+					<ul>
+						<li>Check the system is configured properly:</li>
+						<ul>
+							<li>Sound output option in System Configuration.</li>
+							<ul>
+								<li>LOCAL HARDWARE - check your sound hardware and that it is detected by Java.</li>
+								<li>BROWSER - check Hudson URL (currently ${h.inferHudsonURL(request)}).</li>
+							</ul>
+						</ul>
+						<li>Check sound file formats.</li>
+						<ul>
+							<li>WAV is generally supported, but some WAV files use MPEG which is not.</li>
+							<li>AU and AIFF are normally supported.</li>
+							<li>MP3 is not widely supported.</li>
+							<li>OGG should work everywhere.</li>
+						</ul>
+						<li>Check browser capability.</li>
+						<ul>
+							<li>If using the BROWSER option, your browser must be HTML5 Audio capable.</li>
+						</ul>
+						<li>Sounds are not muted.</li>
+						<ul>
+							<li>If using the BROWSER option, browsers may take up to 1 minute to begin to play sounds after being un-muted.</li>
+						</ul>
+					</ul>
+				</div>
 			</p>
 		</l:main-panel>
 	</l:layout>
