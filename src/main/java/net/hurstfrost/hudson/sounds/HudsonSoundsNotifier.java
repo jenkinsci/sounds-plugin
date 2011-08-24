@@ -205,7 +205,7 @@ public class HudsonSoundsNotifier extends Notifier {
 		
 		private String	soundArchive = INTERNAL_ARCHIVE;
 		
-		private PLAY_METHOD	playMethod = PLAY_METHOD.LOCAL;
+		private PLAY_METHOD	playMethod = PLAY_METHOD.BROWSER;
 		
 		private String	systemCommand;
 		
