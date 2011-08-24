@@ -86,7 +86,7 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
     }
 
     public String getUrlName() {
-        return "sounds";
+        return "/sounds";
     }
 
     public String getDisplayName() {
@@ -172,11 +172,6 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
 			}
 		}
 	    
-	    public HttpResponse testSound(@QueryParameter String sound) {
-	    	System.out.println("testSound:" + sound);
-	    	return FormValidation.ok();
-	    }
-
         public List<SoundBite> getSounds() {
         	HudsonSoundsDescriptor hudsonSoundsDescriptor = HudsonSoundsNotifier.getSoundsDescriptor();
         	
@@ -192,7 +187,7 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
 			save();
 		}
 		
-        public FormValidation doCheckSoundUrl(@QueryParameter String soundUrl) {
+        public FormValidation validateUrl(String soundUrl) {
         	if (StringUtils.isEmpty(soundUrl)) {
         		return FormValidation.warning("Missing URL");
         	}
@@ -235,6 +230,11 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
 		
 		public FormValidation doTestUrl(@QueryParameter String soundUrl) {
 			try {
+				FormValidation response = validateUrl(soundUrl);
+				
+				if (response.kind != FormValidation.Kind.OK) {
+					return response;
+				}
 				URL url = new URL(soundUrl);
 				HudsonSoundsNotifier.getSoundsDescriptor().playSoundFromUrl(url, null);
 				return FormValidation.ok(String.format("Sound played successfully"));
