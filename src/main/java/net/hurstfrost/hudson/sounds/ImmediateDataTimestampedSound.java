@@ -15,4 +15,9 @@ class ImmediateDataTimestampedSound extends AbstractTimestamptedSound {
 	public String getUrl(Integer version) {
 		return sound;
 	}
+	
+	@Override
+	public boolean isCancel() {
+		return false;
+	}
 }

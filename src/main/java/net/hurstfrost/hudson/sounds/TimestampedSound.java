@@ -9,4 +9,6 @@ interface TimestampedSound {
 	boolean expired(long expiryExtension);
 	
 	String getUrl(Integer version);
+	
+	boolean isCancel();
 }

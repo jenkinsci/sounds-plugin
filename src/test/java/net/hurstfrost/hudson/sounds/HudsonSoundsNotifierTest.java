@@ -10,6 +10,7 @@ import java.util.TreeMap;
 import javax.sound.sampled.UnsupportedAudioFileException;
 
 import net.hurstfrost.hudson.sounds.HudsonSoundsNotifier.HudsonSoundsDescriptor;
+import net.hurstfrost.hudson.sounds.HudsonSoundsNotifier.PLAY_METHOD;
 import net.hurstfrost.hudson.sounds.HudsonSoundsNotifier.SoundEvent;
 import net.hurstfrost.hudson.sounds.HudsonSoundsNotifier.HudsonSoundsDescriptor.SoundBite;
 
@@ -28,13 +29,14 @@ public class HudsonSoundsNotifierTest extends HudsonTestCase {
 		TEST_ARCHIVE_URL = HudsonSoundsNotifier.class.getResource("/test-sound-archive.zip").toString();
 		descriptor = (HudsonSoundsDescriptor) Hudson.getInstance().getDescriptor("HudsonSoundsNotifier");
 		instance = new HudsonSoundsNotifier();
+		descriptor.setPlayMethod(PLAY_METHOD.LOCAL);
 	}
 	
 	public void testRebuildIndex() throws Exception {
 		TreeMap<String, SoundBite> index = HudsonSoundsDescriptor.rebuildSoundsIndex(TEST_ARCHIVE_URL);
 		
 		assertNotNull(index);
-		assertEquals(5, index.size());
+		assertEquals(6, index.size());
 		
 		assertNull(index.get(""));
 		assertNotNull(index.get("YAWN"));
@@ -47,7 +49,7 @@ public class HudsonSoundsNotifierTest extends HudsonTestCase {
 		descriptor.setSoundArchive(TEST_ARCHIVE_URL);
 		
 		assertNotNull(descriptor.getSounds());
-		assertEquals(5, descriptor.getSounds().size());
+		assertEquals(6, descriptor.getSounds().size());
 	}
 	
 	public void testPlaySound() throws Exception {
@@ -57,6 +59,7 @@ public class HudsonSoundsNotifierTest extends HudsonTestCase {
 		try {
 			descriptor.playSound("YAWN");
 		} catch (UnplayableSoundBiteException e) {
+			System.out.println("Unable to play WAV");
 			// No guarantee that machine running tests can play sounds, so swallow this.
 			e.printStackTrace();
 		}
@@ -70,6 +73,24 @@ public class HudsonSoundsNotifierTest extends HudsonTestCase {
 			try {
 				descriptor.playSound("burp");
 			} catch (UnplayableSoundBiteException e) {
+				System.out.println("Unable to play MP3");
+				// As expected
+				assertTrue(e.toString(), e.getCause() instanceof UnsupportedAudioFileException);
+			}
+		} catch (Exception e) {
+			// No guarantee that machine running tests can play sounds, so swallow this.
+		}
+	}
+	
+	public void testPlayOgg() {
+		descriptor.setSoundArchive(TEST_ARCHIVE_URL);
+		descriptor.getSounds();
+		
+		try {
+			try {
+				descriptor.playSound("atttts");
+			} catch (UnplayableSoundBiteException e) {
+				System.out.println("Unable to play OGG");
 				// As expected
 				assertTrue(e.toString(), e.getCause() instanceof UnsupportedAudioFileException);
 			}

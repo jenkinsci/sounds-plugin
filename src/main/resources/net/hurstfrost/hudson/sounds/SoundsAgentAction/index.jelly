@@ -8,10 +8,10 @@
 		<l:side-panel>
 			<l:tasks>
 				<l:task icon="images/24x24/up.gif" href="${rootURL}/" title="${%Back to Dashboard}" />
-<!-- 			<l:task icon="images/24x24/document.gif" href="stopAndFlush" onclick="return false;" title="${%Stop all playing sounds}" /> -->
 				<l:task icon="plugin/sounds/icon/s_${it.globalMute?'off':'on'}_24x24.png" href="globalMute" title="${it.globalMute?'Enable':'Disable ALL'} sounds${it.globalMute?' (currently disabled)':''}" />
 				<j:if test="${!it.globalMute}">
 					<l:task icon="plugin/sounds/icon/s_${it.localMute?'off':'on'}_24x24.png" href="localMute" title="Local mute${it.localMute?' (currently muted)':''}" />
+		 			<l:task icon="plugin/sounds/icon/s_off_24x24.png" href="cancelSounds" title="${%Cancel all playing sounds}" />
 				</j:if>
 			</l:tasks>
 		</l:side-panel>
@@ -44,17 +44,19 @@
 					<ul>
 						<li>a Job build action</li>
 						<li>a Job notifier rule (e.g. on failure)</li>
-						<li>by making an HTTP request to ${h.inferHudsonURL(request)}sounds/playSound?src=&amp;lt;URL&gt; (currently only supported in HTML5 mode)</li>
+						<li>by making an HTTP request to ${h.inferHudsonURL(request)}sounds/playSound?src=&amp;lt;URL&gt; (currently only supported in BROWSER mode)</li>
+						<li>embed a Sounds agent in any other site (see <a href="${h.inferHudsonURL(request)}sounds/jsonpdemo">${h.inferHudsonURL(request)}sounds/jsonpdemo</a>)</li>
 					</ul>
 					<h2>Troubleshooting tips:</h2>
 					If sound does not work some of the checks below might lead you to a solution:
 					<ul>
 						<li>Check the system is configured properly:</li>
 						<ul>
-							<li>Sound output option in System Configuration.</li>
+							<li>Sound output option in System Configuration (currently '${it.soundsDescriptor.playMethod}').</li>
 							<ul>
-								<li>LOCAL HARDWARE - check your sound hardware and that it is detected by Java.</li>
+								<li>LOCAL hardware - check your sound hardware and that it is detected by Java.</li>
 								<li>BROWSER - check Hudson URL (currently ${h.inferHudsonURL(request)}).</li>
+								<li>PIPE - check that command can connect without password prompt.</li>
 							</ul>
 						</ul>
 						<li>Check sound file formats.</li>

@@ -33,6 +33,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import javax.sound.sampled.AudioFileFormat;
+import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.DataLine;
@@ -674,20 +675,31 @@ public class HudsonSoundsNotifier extends Notifier {
 	    	}
 	    }
 
-		protected void playSoundBite(AudioInputStream audioInputStream) throws LineUnavailableException, IOException {
-			Info info = new DataLine.Info(SourceDataLine.class, audioInputStream.getFormat());
+		protected void playSoundBite(AudioInputStream in) throws LineUnavailableException, IOException {
+			final AudioFormat baseFormat = in.getFormat();
+			AudioFormat  decodedFormat = baseFormat;	//new AudioFormat(
+//	                AudioFormat.Encoding.PCM_SIGNED,
+//	                baseFormat.getSampleRate(),
+//	                8,
+//	                baseFormat.getChannels(),
+//	                baseFormat.getChannels(),
+//	                baseFormat.getSampleRate(),
+//	                false);
+//			AudioInputStream din = AudioSystem.getAudioInputStream(decodedFormat, in);
+			Info info = new DataLine.Info(SourceDataLine.class, decodedFormat);
 			SourceDataLine line = (SourceDataLine) AudioSystem.getLine(info);
-
-			line.open();
+			line.open(decodedFormat);
 			line.start();
 			byte[]	buffer = new byte[8096];
 			while (true) {
-				int read = audioInputStream.read(buffer);
+				int read = in.read(buffer);
 				if (read <= 0) break;
 				line.write(buffer, 0, read);
 			}
 			line.drain();
+			line.stop();
 			line.close();
+//			din.close();
 		}
 	}
 	

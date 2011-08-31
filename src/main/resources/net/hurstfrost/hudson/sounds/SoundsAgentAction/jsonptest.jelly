@@ -1,9 +1,0 @@
-<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler">
-<html>
-<head>
-<script type="text/javascript"></script>
-<script type="text/javascript" src="jsonp?callback=soundsToPlay"></script>
-</head>
-<h1>JSONP test page</h1>
-</html>
-</j:jelly>

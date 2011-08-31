@@ -27,4 +27,9 @@ class UrlTimestampedSound extends AbstractTimestamptedSound {
 		
 		return Hudson.getInstance().getRootUrl() + "sounds/sound?v=" + version;
 	}
+	
+	@Override
+	public boolean isCancel() {
+		return false;
+	}
 }

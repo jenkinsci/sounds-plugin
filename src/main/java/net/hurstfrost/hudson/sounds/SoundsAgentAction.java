@@ -108,6 +108,10 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
     	// Why doesn't ${rootURL} work in script.jelly?
     	return Hudson.getInstance().getRootUrl();
     }
+    
+    public HudsonSoundsDescriptor getSoundsDescriptor() {
+    	return HudsonSoundsNotifier.getSoundsDescriptor();
+	}
 
     @Extension
     public static final class SoundsAgentActionDescriptor extends Descriptor<SoundsAgentAction> {
@@ -131,7 +135,7 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
     	 * @param sound
     	 * @param delay amount of time to wait before playing sound, or null to enable auto-sync
     	 */
-		public void addSound(String sound, Integer delay) {
+		public synchronized void addSound(String sound, Integer delay) {
 			purgeExpiredSounds(EXPIRY_EXTENSION);
 			
 			wavsToPlay.add(new ImmediateDataTimestampedSound(sound, System.currentTimeMillis() + (delay==null?DEFAULT_POLL_INTERVAL + LATENCY_COMPENSATION:delay)));
@@ -142,13 +146,20 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
 		 * @param url
     	 * @param delay amount of time to wait before playing sound, or null to enable auto-sync
 		 */
-		public void addSound(URL url, Integer delay) {
+		public synchronized void addSound(URL url, Integer delay) {
 			purgeExpiredSounds(EXPIRY_EXTENSION);
 			
 			wavsToPlay.add(new UrlTimestampedSound(url, System.currentTimeMillis() + (delay==null?DEFAULT_POLL_INTERVAL + LATENCY_COMPENSATION:delay)));
 		}
 
-		public TimestampedSound soundAtOffset(int o) {
+		public synchronized void cancelSounds() {
+			for (int o = 0; o < wavsToPlay.size(); o++) {
+				wavsToPlay.set(o, new CancelSoundsMarker(System.currentTimeMillis()));
+			}
+			wavsToPlay.add(new CancelSoundsMarker(System.currentTimeMillis()));
+		}
+
+		public synchronized TimestampedSound soundAtOffset(int o) {
 			purgeExpiredSounds(EXPIRY_EXTENSION);
 			
 			if (o < version || o - version >= wavsToPlay.size()) {
@@ -289,8 +300,26 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
 		}
     }
     
+    public HttpResponse doCancelSounds() {
+		SoundsAgentActionDescriptor descriptor = getDescriptor();
+		
+		descriptor.cancelSounds();
+		
+    	return HttpResponses.forwardToPreviousPage();
+    }
+    
     public String getNextSound() {
-    	return doGetSounds(Stapler.getCurrentRequest(), Stapler.getCurrentResponse(), null).jsonObject.toString();
+    	final StaplerRequest request = Stapler.getCurrentRequest();
+    	
+    	Integer	version = null;
+    	
+    	try {
+			version = new Integer(request.getParameter("version"));
+		} catch (NumberFormatException e) {
+			// Missing or invalid version
+		}
+    	
+		return doGetSounds(request, Stapler.getCurrentResponse(), version).jsonObject.toString();
     }
     
     public JSONHttpResponse doGetSounds(StaplerRequest req, StaplerResponse rsp, @QueryParameter Integer version) {
@@ -318,14 +347,21 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
 
     			if (version != null && !isMuted(req)) {
     				final TimestampedSound sound = descriptor.soundAtOffset(version);
-    				if (sound != null && !sound.expired(0)) {
-    					jsonObject.element("play", sound.getUrl(version));
-    					newVersion = version + 1;
-    					long	delayBy = sound.getPlayAt() - System.currentTimeMillis();
-    					if (delayBy > 0) {
-    						jsonObject.element("d", delayBy);
+
+    				if (sound != null) {
+    					if (!sound.expired(0) && !sound.isCancel()) {
+        					jsonObject.element("play", sound.getUrl(version));
+        					newVersion = version + 1;
+        					long	delayBy = sound.getPlayAt() - System.currentTimeMillis();
+        					if (delayBy > 0) {
+        						jsonObject.element("d", delayBy);
+        					}
+        					jsonObject.element("p", IMMEDIATE_POLL_INTERVAL);
+        				}
+    					
+    					if (sound.isCancel()) {
+        					jsonObject.put("x", true);
     					}
-    					jsonObject.element("p", IMMEDIATE_POLL_INTERVAL);
     				}
     			}
 
@@ -419,6 +455,7 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
     	Hudson.getInstance().checkPermission(PERMISSION);
     	
     	getDescriptor().setGlobalMute(!getDescriptor().isGlobalMute());
+    	getDescriptor().cancelSounds();
 		
     	return HttpResponses.forwardToPreviousPage();
     }
@@ -456,7 +493,7 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
 
 	protected void playSound(InputStream stream, Integer afterDelayMs) throws UnsupportedAudioFileException, IOException {
 		AudioInputStream source = AudioSystem.getAudioInputStream(stream);
-		System.out.println("Format="+source.getFormat());
+
 		ByteArrayOutputStream dest = new ByteArrayOutputStream();
 		AudioSystem.write(source, AudioFileFormat.Type.WAVE, dest);
 		String encodeBase64String = "data:audio/wav;base64," + new String(Base64.encodeBase64(dest.toByteArray(), false));

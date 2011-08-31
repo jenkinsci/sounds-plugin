@@ -42,6 +42,25 @@ public class SoundsAgentActionTest extends HudsonTestCase {
 		HudsonSoundsNotifier.getSoundsDescriptor().setPlayMethod(PLAY_METHOD.BROWSER);
 	}
 
+	public void testCancelSounds() {
+		// given:
+		descriptor.addSound("sound1", 0);
+		descriptor.addSound("sound2", 0);
+		expect(request.getCookies()).andReturn(new Cookie[0]).times(2);
+		response.addCookie((Cookie) anyObject());
+		
+		// when:
+		replay(request, response);
+		instance.doCancelSounds();
+		JSONHttpResponse jsonResponse = instance.doGetSounds(request, response, 10);
+		
+		// then:
+		verify(request, response);
+		assertFalse(jsonResponse.jsonObject.containsKey("play"));
+		assertEquals(13, jsonResponse.jsonObject.optLong("v"));
+		assertTrue(jsonResponse.jsonObject.optBoolean("x"));
+	}
+	
 	public void testGetSoundsWithNoVersionParameterOrCookie() throws Exception {
 		descriptor.addSound("sound1", 0);
 		descriptor.addSound("sound2", 0);

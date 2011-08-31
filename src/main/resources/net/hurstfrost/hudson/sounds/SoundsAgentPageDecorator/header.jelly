@@ -1,3 +1,20 @@
 <j:jelly xmlns:j="jelly:core">
-<script type="text/javascript" defer="defer" src="${request.contextPath}/sounds/script"></script>
+<script type="text/javascript" src="${request.contextPath}/sounds/script"></script>
+<script type="text/javascript" defer="defer">
+  	function _sounds_ajaxJsonFetcherFactory(onSuccess, onFailure) {
+		return function() {
+			new Ajax.Request("${request.contextPath}/sounds/getSounds", {
+				parameters: { version: VERSION },
+  				onSuccess: function(rsp) {
+  					onSuccess(eval('x='+rsp.responseText))
+  				},
+  				onFailure: onFailure
+  			});
+  		}
+	}
+  	
+  	if (AUDIO_CAPABLE) {
+	  	_sounds_pollForSounds(_sounds_ajaxJsonFetcherFactory);
+	}
+</script>
 </j:jelly>
