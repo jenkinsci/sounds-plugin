@@ -241,6 +241,7 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
 		
 		public FormValidation doTestUrl(@QueryParameter String soundUrl) {
 			try {
+				soundUrl = HudsonSoundsNotifier.toUri(soundUrl);
 				FormValidation response = validateUrl(soundUrl);
 				
 				if (response.kind != FormValidation.Kind.OK) {

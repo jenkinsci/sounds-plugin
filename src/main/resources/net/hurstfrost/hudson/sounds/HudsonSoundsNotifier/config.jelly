@@ -1,15 +1,15 @@
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
 	<f:entry title="Sounds">
 		<f:repeatable name="soundEvents" var="se" items="${instance.soundEvents}" add="${%Add sound}">
-			<table class="center-align">
-				<f:entry title="">
-					<table>
+			<table>
+				<f:entry title="" help="/plugin/sounds/help-config-soundrule.html">
+					<table class="center-align">
 						<tr class="group-row">
 							<td class="pane-header blank">
 								${%On build result}
 							</td>
 							<td class="pane-header blank" colspan="5">
-								${%For previous build result}
+								${%For previous build result(s)}
 							</td>
 							<td class="pane-header blank">
 								${%Play sound}
@@ -30,19 +30,19 @@
 								</select>
 							</td>
 							<td>
-								NB:<f:checkbox field="fromNotBuilt" checked="${se.fromNotBuilt}"/>
+								<span title="Not Built">NB:<f:checkbox field="fromNotBuilt" checked="${se==null||se.fromNotBuilt}"/></span>
 							</td>
 							<td>
-								Ab:<f:checkbox field="fromAborted" checked="${se.fromAborted}"/>
+								<span title="Aborted">Ab:<f:checkbox field="fromAborted" checked="${se==null||se.fromAborted}"/></span>
 							</td>
 							<td>
-								Fa:<f:checkbox field="fromFailure" checked="${se.fromFailure}"/>
+								<span title="Failed">Fa:<f:checkbox field="fromFailure" checked="${se==null||se.fromFailure}"/></span>
 							</td>
 							<td>
-								Un:<f:checkbox field="fromUnstable" checked="${se.fromUnstable}"/>
+								<span title="Unstable">Un:<f:checkbox field="fromUnstable" checked="${se==null||se.fromUnstable}"/></span>
 							</td>
 							<td>
-								Su:<f:checkbox field="fromSuccess" checked="${se.fromSuccess}"/>
+								<span title="Succeeded">Su:<f:checkbox field="fromSuccess" checked="${se==null||se.fromSuccess}"/></span>
 							</td>
 							<td>
 								<select class="setting-input" name="soundId">

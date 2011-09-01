@@ -17,7 +17,7 @@
 		</l:side-panel>
 		<l:main-panel>
 			<h1>Sound Control Panel</h1>
-			<f:form method="post" action="">
+			<form method="post" action="" onsubmit="return false;"><table width="100%"><tbody>
 				<f:section title="Play sound from internal sound archive">
 					<f:entry title="Test sound" field="sound">
 						<input type="hidden" name="_.selectedSound" />
@@ -36,35 +36,42 @@
 					</f:entry>
 					<f:validateButton method="testUrl" title="Test" with="soundUrl" />
 				</f:section>
-			</f:form>
+			</tbody></table></form>
 			<p>
 				<div class="help" style="display: block">
-					<h2>Playing sounds:</h2>
+					<h2>Triggering sounds:</h2>
 					Sounds can be triggered using:
 					<ul>
-						<li>a Job build action</li>
-						<li>a Job notifier rule (e.g. on failure)</li>
-						<li>by making an HTTP request to ${h.inferHudsonURL(request)}sounds/playSound?src=&amp;lt;URL&gt; (currently only supported in BROWSER mode)</li>
-						<li>embed a Sounds agent in any other site (see <a href="${h.inferHudsonURL(request)}sounds/jsonpdemo">${h.inferHudsonURL(request)}sounds/jsonpdemo</a>)</li>
+						<li>a Job Build action</li>
+						<li>a Job Post-build action (e.g. on failure)</li>
+						<li>by making an HTTP request to ${h.inferHudsonURL(request)}sounds/playSound?src=&amp;lt;URL&gt; (currently only supported in <span style="font-family:courier">BROWSER</span> mode)</li>
+					</ul>
+					<h2>Sound output:</h2>
+					Sound can be configured to be output to:
+					<ul>
+					<li>the audio hardware of the Jenkins server host</li>
+					<li>an operating system pipe (OS dependent)</li>
+					<li>all compatible browsers on a Jenkins page</li>
+					<li>all compatible browsers on a page containing the Jenkins Sounds JSONP Agent (see <a href="${h.inferHudsonURL(request)}sounds/jsonpdemo">${h.inferHudsonURL(request)}sounds/jsonpdemo</a>)</li>
 					</ul>
 					<h2>Troubleshooting tips:</h2>
 					If sound does not work some of the checks below might lead you to a solution:
 					<ul>
 						<li>Check the system is configured properly:</li>
 						<ul>
-							<li>Sound output option in System Configuration (currently '${it.soundsDescriptor.playMethod}').</li>
+							<li>Sound output option in System Configuration (currently '<span style="font-family:courier">${it.soundsDescriptor.playMethod}</span>').</li>
 							<ul>
 								<li>LOCAL hardware - check your sound hardware and that it is detected by Java.</li>
-								<li>BROWSER - check Hudson URL (currently ${h.inferHudsonURL(request)}).</li>
-								<li>PIPE - check that command can connect without password prompt.</li>
+								<li>BROWSER - check Hudson URL (currently <a href="${h.inferHudsonURL(request)}">${h.inferHudsonURL(request)}</a>).</li>
+								<li>PIPE - check that pipe command can connect without password or any other prompt.</li>
 							</ul>
 						</ul>
 						<li>Check sound file formats.</li>
 						<ul>
-							<li>WAV is generally supported, but some WAV files use MPEG which is not.</li>
+							<li>WAV is most widely supported, but some WAV files use MPEG which is not.</li>
 							<li>AU and AIFF are normally supported.</li>
 							<li>MP3 is not widely supported.</li>
-							<li>OGG should work everywhere.</li>
+							<li>OGG should work on most browsers, but is not supported on local hardware.</li>
 						</ul>
 						<li>Check browser capability.</li>
 						<ul>
@@ -74,6 +81,8 @@
 						<ul>
 							<li>If using the BROWSER option, browsers may take up to 1 minute to begin to play sounds after being un-muted.</li>
 						</ul>
+						<li>Check the plugin homepage for updates <a href="http://wiki.jenkins-ci.org/display/JENKINS/Jenkins+Sounds+plugin
+					">http://wiki.jenkins-ci.org/display/JENKINS/Jenkins+Sounds+plugin</a> and report problems (and successes! - all feedback welcome).</li>
 					</ul>
 				</div>
 			</p>

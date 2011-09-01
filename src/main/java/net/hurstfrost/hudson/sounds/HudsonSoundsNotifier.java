@@ -96,7 +96,7 @@ public class HudsonSoundsNotifier extends Notifier {
 		}
 		
 		public boolean isFromNotBuilt() {
-			return fromResults.contains(Result.NOT_BUILT);
+			return fromResults.isEmpty() || fromResults.contains(Result.NOT_BUILT);
 		}
 		
 		public void setFromNotBuilt(boolean b) {
@@ -108,7 +108,7 @@ public class HudsonSoundsNotifier extends Notifier {
 		}
 
 		public boolean isFromAborted() {
-			return fromResults.contains(Result.ABORTED);
+			return fromResults.isEmpty() || fromResults.contains(Result.ABORTED);
 		}
 		
 		public void setFromAborted(boolean b) {
@@ -120,7 +120,7 @@ public class HudsonSoundsNotifier extends Notifier {
 		}
 
 		public boolean isFromFailure() {
-			return fromResults.contains(Result.FAILURE);
+			return fromResults.isEmpty() || fromResults.contains(Result.FAILURE);
 		}
 		
 		public void setFromFailure(boolean b) {
@@ -132,7 +132,7 @@ public class HudsonSoundsNotifier extends Notifier {
 		}
 
 		public boolean isFromUnstable() {
-			return fromResults.contains(Result.UNSTABLE);
+			return fromResults.isEmpty() || fromResults.contains(Result.UNSTABLE);
 		}
 		
 		public void setFromUnstable(boolean b) {
@@ -144,7 +144,7 @@ public class HudsonSoundsNotifier extends Notifier {
 		}
 
 		public boolean isFromSuccess() {
-			return fromResults.contains(Result.SUCCESS);
+			return fromResults.isEmpty() || fromResults.contains(Result.SUCCESS);
 		}
 		
 		public void setFromSuccess(boolean b) {
@@ -325,19 +325,6 @@ public class HudsonSoundsNotifier extends Notifier {
 
 		public void setPipeTimeoutSecs(int pipeTimeout) {
 			this.pipeTimeoutSecs = Math.max(MIN_PIPE_TIMEOUT_SECS, Math.min(MAX_PIPE_TIMEOUT_SECS, pipeTimeout));
-		}
-
-		/**
-		 * @param archive
-		 * @return 
-		 */
-		private String toUri(String archive) {
-			if (archive.startsWith("http://") || archive.startsWith("file:/")) {
-				return archive;
-			}
-			
-			// Try to make sense of this as a filing system path
-			return new File(archive).toURI().toString();
 		}
 
 		@Override
@@ -738,5 +725,22 @@ public class HudsonSoundsNotifier extends Notifier {
 		}
 		
 		return foundEvent;
+	}
+
+	/**
+	 * @param path
+	 * @return 
+	 */
+	protected static String toUri(String path) {
+		if (StringUtils.isEmpty(path)) {
+			return "";
+		}
+		
+		if (path.startsWith("http://") || path.startsWith("file:/")) {
+			return path;
+		}
+		
+		// Try to make sense of this as a filing system path
+		return new File(path).toURI().toString();
 	}
 }
