@@ -349,9 +349,10 @@ public class HudsonSoundsNotifier extends Notifier {
 				} catch (Exception e) {
 					Log.debug("Exception setting play method", e);
 				}
+				// JENKINS-13825 
+				setSystemCommand(playMethod.optString("systemCommand"));
+				setPipeTimeoutSecs(playMethod.optInt("pipeTimeoutSecs"));
 			}
-			setSystemCommand(json.optString("systemCommand"));
-			setPipeTimeoutSecs(json.optInt("pipeTimeoutSecs"));
 			save();
 			return true;
 		}
