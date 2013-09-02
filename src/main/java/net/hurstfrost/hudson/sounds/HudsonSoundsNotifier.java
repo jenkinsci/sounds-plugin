@@ -42,6 +42,7 @@ import javax.sound.sampled.SourceDataLine;
 import javax.sound.sampled.UnsupportedAudioFileException;
 import javax.sound.sampled.DataLine.Info;
 
+import hudson.util.VersionNumber;
 import net.sf.json.JSONObject;
 
 import org.apache.commons.collections.CollectionUtils;
@@ -198,13 +199,15 @@ public class HudsonSoundsNotifier extends Notifier {
 
 	@Extension
 	public static final class HudsonSoundsDescriptor extends BuildStepDescriptor<Publisher> {
-		private static final String INTERNAL_ARCHIVE = HudsonSoundsNotifier.class.getResource("/sound-archive.zip").toString();
+        private static final String INTERNAL_ARCHIVE = HudsonSoundsNotifier.class.getResource("/sound-archive.zip").toString();
 
 		private static final int MAX_PIPE_TIMEOUT_SECS = 60;
 		private static final int MIN_PIPE_TIMEOUT_SECS = 5;
 		private static final int PIPE_TIMEOUT_EXTENDS_SECS = 5;
-		
-		private String	soundArchive = INTERNAL_ARCHIVE;
+        
+        public static final VersionNumber STAPLER_JSON_BREAKING_CHANGE_VERSION_NUMBER = new VersionNumber("1.445");
+
+        private String	soundArchive = INTERNAL_ARCHIVE;
 		
 		private PLAY_METHOD	playMethod = PLAY_METHOD.BROWSER;
 		
@@ -340,12 +343,21 @@ public class HudsonSoundsNotifier extends Notifier {
 				try {
 					PLAY_METHOD method = PLAY_METHOD.valueOf(playMethod.getString("value"));
 					setPlayMethod(method);
+                    
+                    if (method == PLAY_METHOD.PIPE) {
+                        JSONObject pipeConfig = playMethod;
+
+                        if (Hudson.getVersion().isOlderThan(STAPLER_JSON_BREAKING_CHANGE_VERSION_NUMBER)) {
+                            pipeConfig = json;
+                        }
+
+                        setSystemCommand(pipeConfig.optString("systemCommand"));
+                        setPipeTimeoutSecs(pipeConfig.optInt("pipeTimeoutSecs"));
+                    }
 				} catch (Exception e) {
 					Log.debug("Exception setting play method", e);
 				}
 			}
-			setSystemCommand(json.optString("systemCommand"));
-			setPipeTimeoutSecs(json.optInt("pipeTimeoutSecs"));
 			save();
 			return true;
 		}
