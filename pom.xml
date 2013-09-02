@@ -32,7 +32,7 @@
 			</plugin>
 		</plugins>
 	</build>
-	
+
 	<distributionManagement>
 		<repository>
 			<id>maven.jenkins-ci.org</id>
@@ -40,11 +40,11 @@
 		</repository>
 	</distributionManagement>
 
-	<scm>
-		<connection>scm:svn:https://svn.jenkins-ci.org/trunk/hudson/plugins/sounds/</connection>
-		<developerConnection>scm:svn:https://svn.jenkins-ci.org/trunk/hudson/plugins/sounds/</developerConnection>
-	  <url>https://hudson.dev.java.net/source/browse/hudson/trunk/hudson/plugins/sounds</url>
-  </scm>
+    <scm>
+        <connection>scm:git:ssh://github.com/jenkinsci/sounds-plugin.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/jenkinsci/sounds-plugin.git</developerConnection>
+        <url>https://github.com/jenkinsci/sounds-plugin</url>
+    </scm>
 
 	<repositories>
 		<repository>
