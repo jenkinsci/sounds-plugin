@@ -419,13 +419,13 @@ public class HudsonSoundsNotifier extends Notifier {
 			} catch (URISyntaxException e) {
 				return FormValidation.warning("The URL '" + value + "' is invalid (" + e.toString() + ")");
 			}
-	    	
-	    	if (uri.getScheme().equals("file")) {
+
+	    	if ("file".equals(uri.getScheme())) {
 	    		if (new File(uri).exists()) {
 	    			return FormValidation.ok();
 	    		}
 	    		return FormValidation.warning("File not found '" + uri + "'");
-	    	} else if (uri.getScheme().equals("http")) {
+	    	} else if ("http".equals(uri.getScheme())) {
 	    		try {
 	    			URLConnection openConnection = uri.toURL().openConnection();
 
