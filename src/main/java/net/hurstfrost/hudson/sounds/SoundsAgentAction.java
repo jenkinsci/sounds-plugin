@@ -82,7 +82,7 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
 	public static final Permission PERMISSION = Permission.CONFIGURE;
 
 	public String getIconFileName() {
-		return Hudson.getInstance().hasPermission(PERMISSION)?"/plugin/sounds/icon/s_on_24x24.png":null;
+		return "/plugin/sounds/icon/s_on_24x24.png";
     }
 
     public String getUrlName() {
@@ -302,6 +302,8 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
     }
     
     public HttpResponse doCancelSounds() {
+        Hudson.getInstance().checkPermission(PERMISSION);
+
 		SoundsAgentActionDescriptor descriptor = getDescriptor();
 		
 		descriptor.cancelSounds();
@@ -421,8 +423,7 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
     }
     
     public HttpResponse doLocalMute(StaplerRequest req, StaplerResponse rsp) {
-    	Hudson.getInstance().checkPermission(PERMISSION);
-    	
+
 		Cookie cookie = new Cookie(MUTE_COOKIE_NAME, "mute");
 		cookie.setPath("/");
 		
@@ -443,12 +444,15 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
 
     public boolean isLocalMute(StaplerRequest req) {
 		Cookie[] cookies = req.getCookies();
-		for (Cookie cookie : cookies) {
-			if (cookie.getName().equals(MUTE_COOKIE_NAME)) {
-				return true;
-			}
-		}
-		
+
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if (cookie.getName().equals(MUTE_COOKIE_NAME)) {
+                    return true;
+                }
+            }
+        }
+
 		return false;
     }
 

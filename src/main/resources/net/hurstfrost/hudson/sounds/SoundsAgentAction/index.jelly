@@ -3,40 +3,48 @@
 	xmlns:i="jelly:fmt">
     <j:new var="h" className="hudson.Functions" />
     <j:set var="descriptor" value="${it.descriptor}" />
-	${h.checkPermission(it, it.PERMISSION)}
 	<l:layout title="Sounds">
 		<l:side-panel>
 			<l:tasks>
 				<l:task icon="images/24x24/up.gif" href="${rootURL}/" title="${%Back to Dashboard}" />
-				<l:task icon="plugin/sounds/icon/s_${it.globalMute?'off':'on'}_24x24.png" href="globalMute" title="${it.globalMute?'Enable':'Disable ALL'} sounds${it.globalMute?' (currently disabled)':''}" />
+				<j:if test="${h.hasPermission(it, it.PERMISSION)}">
+    				<l:task icon="plugin/sounds/icon/s_${it.globalMute?'off':'on'}_24x24.png" href="globalMute" title="${it.globalMute?'Enable':'Disable ALL'} sounds${it.globalMute?' (currently disabled)':''}" />
+				</j:if>
 				<j:if test="${!it.globalMute}">
 					<l:task icon="plugin/sounds/icon/s_${it.localMute?'off':'on'}_24x24.png" href="localMute" title="Local mute${it.localMute?' (currently muted)':''}" />
-		 			<l:task icon="plugin/sounds/icon/s_off_24x24.png" href="cancelSounds" title="${%Cancel all playing sounds}" />
+    				<j:if test="${h.hasPermission(it, it.PERMISSION)}">
+    		 			<l:task icon="plugin/sounds/icon/s_off_24x24.png" href="cancelSounds" title="${%Cancel all playing sounds}" />
+	    			</j:if>
 				</j:if>
 			</l:tasks>
 		</l:side-panel>
 		<l:main-panel>
 			<h1>Sound Control Panel</h1>
-			<form method="post" action="" onsubmit="return false;"><table width="100%"><tbody>
-				<f:section title="Play sound from internal sound archive">
-					<f:entry title="Test sound" field="sound">
-						<input type="hidden" name="_.selectedSound" />
-						<select class="setting-input" name="_.sound" onchange="findPrevious(this, function(){return true}).value = this.value">
-							<option value="">(choose a sound)</option>
-							<j:forEach var="s" items="${descriptor.sounds}">
-								<f:option value="${s.id}">${s.description}</f:option>
-							</j:forEach>
-						</select>
-					</f:entry>
-					<f:validateButton method="testSound" title="Test" with="selectedSound" />
-				</f:section>
-				<f:section title="Play sound from a URL">
-					<f:entry title="URL" field="soundUrl">
-						<f:textbox />
-					</f:entry>
-					<f:validateButton method="testUrl" title="Test" with="soundUrl" />
-				</f:section>
-			</tbody></table></form>
+                <j:if test="${h.hasPermission(it, it.PERMISSION)}">
+                    <form method="post" action="" onsubmit="return false;"><table width="100%"><tbody>
+                        <f:section title="Play sound from internal sound archive">
+                            <f:entry title="Test sound" field="sound">
+                                <input type="hidden" name="_.selectedSound" />
+                                <select class="setting-input" name="_.sound" onchange="findPrevious(this, function(){return true}).value = this.value">
+                                    <option value="">(choose a sound)</option>
+                                    <j:forEach var="s" items="${descriptor.sounds}">
+                                        <f:option value="${s.id}">${s.description}</f:option>
+                                    </j:forEach>
+                                </select>
+                            </f:entry>
+                            <f:validateButton method="testSound" title="Test" with="selectedSound" />
+                        </f:section>
+                        <f:section title="Play sound from a URL">
+                            <f:entry title="URL" field="soundUrl">
+                                <f:textbox />
+                            </f:entry>
+                            <f:validateButton method="testUrl" title="Test" with="soundUrl" />
+                        </f:section>
+                    </tbody></table></form>
+				</j:if>
+                <j:if test="${!h.hasPermission(it, it.PERMISSION)}">
+                    <div class="error">Insufficient privileges to use the Sound Control Panel.</div>
+				</j:if>
 			<p>
 				<div class="help" style="display: block">
 					<h2>Triggering sounds:</h2>
