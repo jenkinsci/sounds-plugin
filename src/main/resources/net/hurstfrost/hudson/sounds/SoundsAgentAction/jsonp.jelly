@@ -1,4 +1,4 @@
-<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler">
+<?jelly escape-by-default='true'?><j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler">
 <st:contentType value="text/javascript;charset=UTF-8" /><j:choose>
 <j:when test="${request.getParameter('callback')!=null}">
 ${request.getParameter('callback')}(${it.nextSound});

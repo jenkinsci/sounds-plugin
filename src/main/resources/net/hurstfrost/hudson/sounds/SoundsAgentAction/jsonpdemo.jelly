@@ -1,4 +1,4 @@
-<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler">
+<?jelly escape-by-default='true'?><j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler">
 <html>
 <head>
 <script type="text/javascript" src="${request.contextPath}/sounds/script"></script>

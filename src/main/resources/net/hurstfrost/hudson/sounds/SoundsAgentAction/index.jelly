@@ -1,4 +1,4 @@
-<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define"
+<?jelly escape-by-default='true'?><j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define"
 	xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form"
 	xmlns:i="jelly:fmt">
     <j:new var="h" className="hudson.Functions" />
@@ -20,6 +20,13 @@
 		</l:side-panel>
 		<l:main-panel>
 			<h1>Sound Control Panel</h1>
+                <j:if test="${descriptor.supportedAudioFileTypes.isEmpty()}">
+                    <div class="call-to-action" style="display: block">
+                        <p class="warning" help="/plugin/sounds/help-globalConfig-local.html">WARNING: Jenkins JVM AudioSystem has no supported audio formats.</p>
+                        <p>Without any supported formats the plugin functionality is severely limited, if not completely disabled.</p>
+                        <p>This is likely because the plugin ClassLoader has limited access to the system. This can occur during development when run with mvn hpi:run.</p>
+                    </div>
+			    </j:if>
                 <j:if test="${h.hasPermission(it, it.PERMISSION)}">
                     <form method="post" action="" onsubmit="return false;"><table width="100%"><tbody>
                         <f:section title="Play sound from internal sound archive">
@@ -59,11 +66,11 @@
 					<ul>
 					<li>the audio hardware of the Jenkins server host</li>
 					<li>an operating system pipe (OS dependent)</li>
-					<li>all compatible browsers on a Jenkins page</li>
-					<li>all compatible browsers on a page containing the Jenkins Sounds JSONP Agent (see <a href="${h.inferHudsonURL(request)}sounds/jsonpdemo">${h.inferHudsonURL(request)}sounds/jsonpdemo</a>)</li>
+					<li>all compatible browsers currently showing a Jenkins page</li>
 					</ul>
 					<h2>Troubleshooting tips:</h2>
-					If sound does not work some of the checks below might lead you to a solution:
+					<p>A live probe of the AudioSystem reports it supports these file formats: <j:choose><j:when test="${descriptor.supportedAudioFileTypes.isEmpty()}">NONE</j:when><j:otherwise><j:forEach var="t" varStatus="s" items="${descriptor.supportedAudioFileTypes}">${t} (.${t.extension})<j:if test="${!s.last}">, </j:if></j:forEach></j:otherwise></j:choose>.</p>
+					<p>If sound does not work some of the checks below might lead you to a solution:</p>
 					<ul>
 						<li>Check the system is configured properly:</li>
 						<ul>

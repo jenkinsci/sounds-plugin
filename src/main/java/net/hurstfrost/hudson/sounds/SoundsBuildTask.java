@@ -8,24 +8,19 @@ import hudson.model.BuildListener;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import hudson.util.FormValidation;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URL;
-import java.util.List;
-
 import net.hurstfrost.hudson.sounds.HudsonSoundsNotifier.HudsonSoundsDescriptor;
 import net.hurstfrost.hudson.sounds.HudsonSoundsNotifier.HudsonSoundsDescriptor.SoundBite;
 import net.hurstfrost.hudson.sounds.SoundsBuildTask.SoundSource.SourceType;
 import net.sf.json.JSONObject;
-
-import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
+
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.util.List;
 
 public class SoundsBuildTask extends Builder {
 	private final Integer	afterDelayMs;
@@ -47,11 +42,13 @@ public class SoundsBuildTask extends Builder {
 			sourceType = value;
 			URL url = null;
 			try {
-				url = new URL(HudsonSoundsNotifier.toUri(soundUrl));
+				url = new ResourceResolver(soundUrl).toURL();
 			} catch (MalformedURLException e) {
 				// Invalid URL, handled by Descriptor.doCheckSoundUrl()
-			}
-			this.url = url;
+			} catch (URISyntaxException e) {
+                // Invalid URL, handled by Descriptor.doCheckSoundUrl()
+            }
+            this.url = url;
 		}
 	}
 	
@@ -137,34 +134,20 @@ public class SoundsBuildTask extends Builder {
         }
         
         public FormValidation doCheckSoundUrl(@QueryParameter String soundUrl) {
-        	if (StringUtils.isEmpty(soundUrl)) {
+            ResourceResolver resourceResolver = new ResourceResolver(soundUrl);
+
+            if (resourceResolver.isEmpty()) {
         		return FormValidation.warning("Missing URL");
         	}
         	
-        	try {
-				URL url = new URL(HudsonSoundsNotifier.toUri(soundUrl));
-				
-				if (url.getProtocol().toLowerCase().equals("file")) {
-					URI	uri = new URI(HudsonSoundsNotifier.toUri(soundUrl));
-					
-					File file = new File(uri);
-					
-					if (!file.exists() || !file.isFile()) {
-			        	return FormValidation.error("File not found or not readable");
-					}
-					
-					try {
-						FileInputStream inputStream = new FileInputStream(file);
-						
-						inputStream.close();
-					} catch (IOException e) {
-			        	return FormValidation.error("File not found or not readable");
-					}
- 				}
-			} catch (Exception e) {
-	        	return FormValidation.error("Invalid URL");
-			}
-			
+            if (!resourceResolver.isValid()) {
+        		return FormValidation.warning("Invalid URL");
+        	}
+
+            if (!resourceResolver.exists()) {
+                return FormValidation.error("Resource not found or not readable");
+            }
+
 			return FormValidation.ok();
     	}
         
@@ -206,8 +189,10 @@ public class SoundsBuildTask extends Builder {
 		}
 		
 		public FormValidation doTestUrl(@QueryParameter String soundUrl) {
-			try {
-				URL url = new URL(HudsonSoundsNotifier.toUri(soundUrl));
+            ResourceResolver resourceResolver = new ResourceResolver(soundUrl);
+
+            try {
+				URL url = resourceResolver.toURL();
 				HudsonSoundsNotifier.getSoundsDescriptor().playSoundFromUrl(url, null);
 				return FormValidation.ok(String.format("Sound played successfully"));
 			} catch (Exception e) {

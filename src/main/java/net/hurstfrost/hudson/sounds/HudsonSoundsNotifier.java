@@ -3,48 +3,14 @@ package net.hurstfrost.hudson.sounds;
 import hudson.Extension;
 import hudson.ExtensionList;
 import hudson.Launcher;
-import hudson.model.AbstractBuild;
-import hudson.model.AbstractProject;
-import hudson.model.BuildListener;
-import hudson.model.Hudson;
-import hudson.model.Result;
+import hudson.model.*;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Notifier;
 import hudson.tasks.Publisher;
 import hudson.util.FormValidation;
-
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLConnection;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-
-import javax.sound.sampled.AudioFileFormat;
-import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.DataLine;
-import javax.sound.sampled.LineUnavailableException;
-import javax.sound.sampled.SourceDataLine;
-import javax.sound.sampled.UnsupportedAudioFileException;
-import javax.sound.sampled.DataLine.Info;
-
 import hudson.util.VersionNumber;
 import net.sf.json.JSONObject;
-
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
@@ -52,6 +18,18 @@ import org.jfree.util.Log;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
+
+import javax.sound.sampled.*;
+import javax.sound.sampled.DataLine.Info;
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.util.*;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 /**
  * {@link Notifier} that allows Jenkins to play audio clips as build notifications.
@@ -199,7 +177,7 @@ public class HudsonSoundsNotifier extends Notifier {
 
 	@Extension
 	public static final class HudsonSoundsDescriptor extends BuildStepDescriptor<Publisher> {
-        private static final String INTERNAL_ARCHIVE = HudsonSoundsNotifier.class.getResource("/sound-archive.zip").toString();
+        private static final String INTERNAL_ARCHIVE = new ResourceResolver("classpath:sound-archive.zip").toString();
 
 		private static final int MAX_PIPE_TIMEOUT_SECS = 60;
 		private static final int MIN_PIPE_TIMEOUT_SECS = 5;
@@ -247,11 +225,9 @@ public class HudsonSoundsNotifier extends Notifier {
 		}
 		
 		protected static TreeMap<String, SoundBite> rebuildSoundsIndex(String urlString) {
-			final TreeMap<String, SoundBite> index = new TreeMap<String, SoundBite>();
+            final TreeMap<String, SoundBite> index = new TreeMap<String, SoundBite>();
 			try {
-				URL url = new URL(urlString);
-				URLConnection connection = url.openConnection();
-				ZipInputStream zipInputStream = new ZipInputStream(connection.getInputStream());
+				ZipInputStream zipInputStream = new ZipInputStream(new ResourceResolver(urlString).getInputStream());
 				try {
 					ZipEntry entry;
 					while ((entry = zipInputStream.getNextEntry()) != null) {
@@ -262,7 +238,8 @@ public class HudsonSoundsNotifier extends Notifier {
 								f = AudioSystem.getAudioFileFormat(new BufferedInputStream(zipInputStream));
 							} catch (UnsupportedAudioFileException e) {
 								// Oh well
-							}
+                                System.out.println(e);
+                            }
 							index.put(id, new SoundBite(id, entry.getName(), urlString, f));
 						}
 					}
@@ -295,12 +272,18 @@ public class HudsonSoundsNotifier extends Notifier {
 		}
 
 		public void setSoundArchive(String archive) {
-			if (!StringUtils.isEmpty(archive)) {
-				soundArchive = toUri(archive);
-			} else {
-				soundArchive = INTERNAL_ARCHIVE;
-			}
-			
+            ResourceResolver resourceResolver = new ResourceResolver(archive);
+
+            soundArchive = null;
+
+            if (resourceResolver.isValid()) {
+                soundArchive = resourceResolver.toString();
+            }
+
+            if (StringUtils.isEmpty(soundArchive)) {
+                soundArchive = INTERNAL_ARCHIVE;
+            }
+
 			// Force index rebuild on next call
 			needsReindex = true;
 			sounds = null;
@@ -411,20 +394,27 @@ public class HudsonSoundsNotifier extends Notifier {
 	    	
 			return FormValidation.ok();
 	    }
-	    
+
+        /**
+         * Checks that a resource can be found at the specified location.
+         *
+         * @param value the value parameter from the request
+         * @return a FormValidation
+         */
 	    public FormValidation doCheckSoundArchive(@QueryParameter final String value) {
-	    	URI uri;
-			try {
-				uri = new URI(toUri(value));
-			} catch (URISyntaxException e) {
-				return FormValidation.warning("The URL '" + value + "' is invalid (" + e.toString() + ")");
+            ResourceResolver resourceResolver = new ResourceResolver(value);
+
+			if (!resourceResolver.isValid()) {
+				return FormValidation.warning("The URL '" + value + "' is invalid (" /*+ e.toString() + ")"*/);
 			}
 
-	    	if ("file".equals(uri.getScheme())) {
-	    		if (new File(uri).exists()) {
-	    			return FormValidation.ok();
-	    		}
-	    		return FormValidation.warning("File not found '" + uri + "'");
+	    	if (resourceResolver.exists()) {
+                return FormValidation.ok();
+            }
+
+            return FormValidation.warning("Resource not found at '" + value + "'");
+
+/*
 	    	} else if ("http".equals(uri.getScheme())) {
 	    		try {
 	    			URLConnection openConnection = uri.toURL().openConnection();
@@ -444,10 +434,20 @@ public class HudsonSoundsNotifier extends Notifier {
 	    		} catch (IOException e) {
 	    			return FormValidation.warning("The URL '" + value + "' is invalid (" + e.toString() + ")");
 	    		}
-	    	} else {
+            } else if ("classpath".equals(uri.getScheme())) {
+                try {
+
+                    new URL(null, uri.toString(), new ClasspathHandler()).openConnection();
+
+                    return FormValidation.ok();
+                } catch (IOException e) {
+                    return FormValidation.warning("The URL '" + value + "' is invalid (" + e.toString() + ")");
+                }
+            } else {
 	    		// Invalid URI
 	    		return FormValidation.warning("The URI '" + value + "' is invalid");
 	    	}
+*/
 	    }
 
 	    public static class SoundBite {
@@ -568,10 +568,8 @@ public class HudsonSoundsNotifier extends Notifier {
 			}
 		}
 	    
-	    protected InputStream getSoundBiteInputStream(SoundBite soundBite) throws IOException {
-			URL url = new URL(soundBite.url);
-			URLConnection connection = url.openConnection();
-			ZipInputStream zipInputStream = new ZipInputStream(connection.getInputStream());
+	    protected InputStream getSoundBiteInputStream(SoundBite soundBite) throws IOException, URISyntaxException {
+			ZipInputStream zipInputStream = new ZipInputStream(new ResourceResolver(soundBite.url).getInputStream());
 
 			ZipEntry entry;
 			while ((entry = zipInputStream.getNextEntry()) != null) {
@@ -737,22 +735,5 @@ public class HudsonSoundsNotifier extends Notifier {
 		}
 		
 		return foundEvent;
-	}
-
-	/**
-	 * @param path
-	 * @return 
-	 */
-	protected static String toUri(String path) {
-		if (StringUtils.isEmpty(path)) {
-			return "";
-		}
-		
-		if (path.startsWith("http://") || path.startsWith("file:/")) {
-			return path;
-		}
-		
-		// Try to make sense of this as a filing system path
-		return new File(path).toURI().toString();
 	}
 }

@@ -1,4 +1,4 @@
-<j:jelly xmlns:j="jelly:core">
+<?jelly escape-by-default='true'?><j:jelly xmlns:j="jelly:core">
 <script type="text/javascript" src="${request.contextPath}/sounds/script"></script>
 <script type="text/javascript" defer="defer">
   	function _sounds_ajaxJsonFetcherFactory(onSuccess, onFailure) {
