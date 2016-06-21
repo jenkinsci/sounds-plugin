@@ -13,6 +13,7 @@ import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Notifier;
 import hudson.tasks.Publisher;
 import hudson.util.FormValidation;
+import hudson.EnvVars;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -183,12 +184,13 @@ public class HudsonSoundsNotifier extends Notifier {
 	}
     
 	@Override
-	public boolean perform(final AbstractBuild<?, ?> build, final Launcher launcher, final BuildListener listener) {
+	public boolean perform(final AbstractBuild<?, ?> build, final Launcher launcher, final BuildListener listener) throws InterruptedException, IOException {
 		SoundEvent event = getSoundEventFor(build.getResult(), build.getPreviousBuild()!=null?build.getPreviousBuild().getResult():null);
+		EnvVars vars = build.getEnvironment(listener);
 		
 		if (event != null) {
 			try {
-				getDescriptor().playSound(event.getSoundId());
+				getDescriptor().playSound(event.getSoundId(), vars);
 			} catch (UnplayableSoundBiteException e) {
 				listener.getLogger().println("Failed to play sound '" + event.getSoundId() + "' : " + e.toString());
 			}
@@ -496,7 +498,7 @@ public class HudsonSoundsNotifier extends Notifier {
 			}
 		}
 	    
-	    protected void playSoundFromUrl(URL url, Integer afterDelayMs) throws UnplayableSoundBiteException {
+	    protected void playSoundFromUrl(URL url, Integer afterDelayMs, EnvVars vars) throws UnplayableSoundBiteException {
 	    	switch (playMethod) {
 	    		case BROWSER:
 	    			ExtensionList<SoundsAgentAction> soundsAgents = SoundsAgentAction.all();
@@ -509,7 +511,7 @@ public class HudsonSoundsNotifier extends Notifier {
     				break;
 	    		default:
 	    	    	try {
-	    				playSoundFromInputStream(url.openStream());
+	    				playSoundFromInputStream(url.openStream(), vars);
 	    			} catch (Exception e) {
 	        			throw new UnplayableSoundBiteException(url.toString(), e);
 	    			}
@@ -517,10 +519,14 @@ public class HudsonSoundsNotifier extends Notifier {
 		}
 
 	    protected void playSound(String id) throws UnplayableSoundBiteException {
-	    	playSound(id, null);
+	    	playSound(id, null, null);
+	    }
+
+	    protected void playSound(String id, EnvVars vars) throws UnplayableSoundBiteException {
+	    	playSound(id, null, vars);
 	    }
 	    
-	    protected void playSound(String id, Integer afterDelayMs) throws UnplayableSoundBiteException {
+	    protected void playSound(String id, Integer afterDelayMs, EnvVars vars) throws UnplayableSoundBiteException {
 	    	SoundBite soundBite = getSound(id);
 
 	    	if (soundBite != null) {
@@ -541,7 +547,7 @@ public class HudsonSoundsNotifier extends Notifier {
 							soundBiteInputStream = getSoundBiteInputStream(soundBite);
 			    			
 							if (soundBiteInputStream != null) {
-								playSoundFromInputStream(soundBiteInputStream);
+								playSoundFromInputStream(soundBiteInputStream, vars);
 								return;
 							}
 			    		} catch (Exception e) {
@@ -553,14 +559,14 @@ public class HudsonSoundsNotifier extends Notifier {
 			throw new UnplayableSoundBiteException("No such sound.");
 	    }
 
-		private void playSoundFromInputStream(InputStream soundBiteInputStream) throws LineUnavailableException, IOException, UnsupportedAudioFileException, Exception {
+		private void playSoundFromInputStream(InputStream soundBiteInputStream, EnvVars vars) throws LineUnavailableException, IOException, UnsupportedAudioFileException, Exception {
 			try {
 				switch (playMethod) {
 					case LOCAL:
 						playSoundBite(AudioSystem.getAudioInputStream(soundBiteInputStream));
 						break;
 					case PIPE:
-						playSoundBite(soundBiteInputStream, systemCommand);
+						playSoundBite(soundBiteInputStream, vars != null ? vars.expand(systemCommand) : systemCommand);
 						break;
 				}
 			} finally {
