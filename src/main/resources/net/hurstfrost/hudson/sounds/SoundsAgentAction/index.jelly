@@ -22,7 +22,7 @@
 			<h1>Sound Control Panel</h1>
                 <j:if test="${descriptor.supportedAudioFileTypes.isEmpty()}">
                     <div class="call-to-action" style="display: block">
-                        <p class="warning" help="/plugin/sounds/help-globalConfig-local.html">WARNING: Jenkins JVM AudioSystem has no supported audio formats.</p>
+                        <p class="warning" help="/plugin/sounds/help-globalConfig-local.html">WARNING: Jenkins AudioSystem reports no supported audio formats.</p>
                         <p>Without any supported formats the plugin functionality is severely limited, if not completely disabled.</p>
                         <p>This is likely because the plugin ClassLoader has limited access to the system. This can occur during development when run with mvn hpi:run.</p>
                     </div>
@@ -96,8 +96,7 @@
 						<ul>
 							<li>If using the BROWSER option, browsers may take up to 1 minute to begin to play sounds after being un-muted.</li>
 						</ul>
-						<li>Check the plugin homepage for updates <a href="http://wiki.jenkins-ci.org/display/JENKINS/Jenkins+Sounds+plugin
-					">http://wiki.jenkins-ci.org/display/JENKINS/Jenkins+Sounds+plugin</a> and report problems (and successes! - all feedback welcome).</li>
+						<li>Check the plugin homepage for updates <a href="http://wiki.jenkins-ci.org/display/JENKINS/Jenkins+Sounds+plugin">http://wiki.jenkins-ci.org/display/JENKINS/Jenkins+Sounds+plugin</a> and report problems (and successes! - all feedback welcome).</li>
 					</ul>
 				</div>
 			</p>

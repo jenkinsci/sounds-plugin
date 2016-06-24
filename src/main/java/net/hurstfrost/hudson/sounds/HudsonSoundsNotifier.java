@@ -365,7 +365,7 @@ public class HudsonSoundsNotifier extends Notifier {
 			setSoundArchive(soundArchive);
 			setPipeTimeoutSecs(pipeTimeoutSecs);
 			setSystemCommand(systemCommand);
-			
+
 			try {
 				playSound(selectedSound);
 			} catch (UnplayableSoundBiteException e) {
@@ -375,7 +375,7 @@ public class HudsonSoundsNotifier extends Notifier {
 				}
 				return FormValidation.error("Failed to make sound '" + selectedSound + "' : " + message);
 			}
-			
+
 			return FormValidation.ok("Jenkins made sound '" + selectedSound + "' successfully.");
 		}
 		
@@ -413,41 +413,6 @@ public class HudsonSoundsNotifier extends Notifier {
             }
 
             return FormValidation.warning("Resource not found at '" + value + "'");
-
-/*
-	    	} else if ("http".equals(uri.getScheme())) {
-	    		try {
-	    			URLConnection openConnection = uri.toURL().openConnection();
-
-	    			if (openConnection instanceof HttpURLConnection) {
-	    				HttpURLConnection httpUrlConnection = (HttpURLConnection) openConnection;
-
-	    				final int responseCode = httpUrlConnection.getResponseCode();
-	    				if (responseCode == HttpURLConnection.HTTP_OK) {
-	    					return FormValidation.ok();
-	    				}
-	    				
-	    				return FormValidation.warning("The URL '" + value + "' is invalid (" + httpUrlConnection.getResponseMessage() + ")");
-	    			}
-	    			
-	    			return FormValidation.warning("The URL '" + value + "' is invalid");
-	    		} catch (IOException e) {
-	    			return FormValidation.warning("The URL '" + value + "' is invalid (" + e.toString() + ")");
-	    		}
-            } else if ("classpath".equals(uri.getScheme())) {
-                try {
-
-                    new URL(null, uri.toString(), new ClasspathHandler()).openConnection();
-
-                    return FormValidation.ok();
-                } catch (IOException e) {
-                    return FormValidation.warning("The URL '" + value + "' is invalid (" + e.toString() + ")");
-                }
-            } else {
-	    		// Invalid URI
-	    		return FormValidation.warning("The URI '" + value + "' is invalid");
-	    	}
-*/
 	    }
 
 	    public static class SoundBite {
