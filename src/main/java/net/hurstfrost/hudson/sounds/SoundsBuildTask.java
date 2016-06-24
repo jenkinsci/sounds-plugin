@@ -8,6 +8,7 @@ import hudson.model.BuildListener;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import hudson.util.FormValidation;
+import hudson.EnvVars;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -75,11 +76,12 @@ public class SoundsBuildTask extends Builder {
 	}
 
     public boolean perform(AbstractBuild<?,?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
+		EnvVars vars = build.getEnvironment(listener);
     	switch (soundSource.sourceType) {
 		case INTERNAL:
 	    	listener.getLogger().format("Playing internal sound '%s'\n", soundSource.soundId);
 			try {
-				HudsonSoundsNotifier.getSoundsDescriptor().playSound(soundSource.soundId, afterDelayMs);
+				HudsonSoundsNotifier.getSoundsDescriptor().playSound(soundSource.soundId, afterDelayMs, vars);
 			} catch (Exception e) {
 				listener.error(e.toString());
 				return false;
@@ -88,7 +90,7 @@ public class SoundsBuildTask extends Builder {
 		case URL:
 	    	listener.getLogger().format("Playing sound at '%s'\n", soundSource.url);
 			try {
-				HudsonSoundsNotifier.getSoundsDescriptor().playSoundFromUrl(soundSource.url, afterDelayMs);
+				HudsonSoundsNotifier.getSoundsDescriptor().playSoundFromUrl(soundSource.url, afterDelayMs, vars);
 			} catch (Exception e) {
 				listener.error(e.toString());
 				return false;
@@ -208,7 +210,7 @@ public class SoundsBuildTask extends Builder {
 		public FormValidation doTestUrl(@QueryParameter String soundUrl) {
 			try {
 				URL url = new URL(HudsonSoundsNotifier.toUri(soundUrl));
-				HudsonSoundsNotifier.getSoundsDescriptor().playSoundFromUrl(url, null);
+				HudsonSoundsNotifier.getSoundsDescriptor().playSoundFromUrl(url, null, null);
 				return FormValidation.ok(String.format("Sound played successfully"));
 			} catch (Exception e) {
 				return FormValidation.error(String.format("Sound failed : " + e));
