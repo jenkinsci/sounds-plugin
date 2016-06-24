@@ -225,8 +225,8 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
 				if (response.kind != FormValidation.Kind.OK) {
 					return response;
 				}
-				URL url = new URL(soundUrl);
-				HudsonSoundsNotifier.getSoundsDescriptor().playSoundFromUrl(url, null, null);
+                ResourceResolver resourceResolver = new ResourceResolver(soundUrl);
+				HudsonSoundsNotifier.getSoundsDescriptor().playSoundFromUrl(resourceResolver.toURL(), null, null);
 				return FormValidation.ok(String.format("Sound played successfully"));
 			} catch (Exception e) {
 				return FormValidation.error(String.format("Sound failed : " + e));
