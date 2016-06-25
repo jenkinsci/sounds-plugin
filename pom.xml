@@ -67,7 +67,7 @@
         <connection>scm:git:ssh://github.com/jenkinsci/sounds-plugin.git</connection>
         <developerConnection>scm:git:ssh://git@github.com/jenkinsci/sounds-plugin.git</developerConnection>
         <url>https://github.com/jenkinsci/sounds-plugin</url>
-      <tag>HEAD</tag>
+        <tag>HEAD</tag>
   </scm>
 
 	<repositories>
