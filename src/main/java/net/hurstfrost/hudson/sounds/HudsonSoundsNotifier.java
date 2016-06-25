@@ -745,10 +745,6 @@ public class HudsonSoundsNotifier extends Notifier {
 		return foundEvent;
 	}
 
-	/**
-	 * @param path
-	 * @return 
-	 */
 	protected static String toUri(String path) {
 		if (StringUtils.isEmpty(path)) {
 			return "";

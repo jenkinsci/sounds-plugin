@@ -97,9 +97,6 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
         return (SoundsAgentActionDescriptor) Hudson.getInstance().getDescriptorOrDie(getClass());
     }
 
-    /**
-     * Returns all the registered {@link SplashboardAction}s.
-     */
     public static ExtensionList<SoundsAgentAction> all() {
         return Hudson.getInstance().getExtensionList(SoundsAgentAction.class);
     }
@@ -130,12 +127,7 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
             return clazz.getSimpleName();
         }
 
-    	/**
-    	 * 
-    	 * @param sound
-    	 * @param delay amount of time to wait before playing sound, or null to enable auto-sync
-    	 */
-		public synchronized void addSound(String sound, Integer delay) {
+		protected synchronized void addSound(String sound, Integer delay) {
 			purgeExpiredSounds(EXPIRY_EXTENSION);
 			
 			wavsToPlay.add(new ImmediateDataTimestampedSound(sound, System.currentTimeMillis() + (delay==null?DEFAULT_POLL_INTERVAL + LATENCY_COMPENSATION:delay)));
@@ -143,7 +135,7 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
 
 		/**
 		 * 
-		 * @param url
+		 * @param url URL to sound resource
     	 * @param delay amount of time to wait before playing sound, or null to enable auto-sync
 		 */
 		public synchronized void addSound(URL url, Integer delay) {
@@ -385,16 +377,15 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
     	
     	return new JSONHttpResponse(jsonObject);
     }
-    
+
     /**
      * Stream out the specified sound.
-     * 
-     * @param request
-     * @param response
-     * @return
-     * @throws IOException
+     *
+     * @param request request to extract sound parameters from
+     * @param response unused
+     * @return the sound resource or an error
      */
-	public HttpResponse doSound(StaplerRequest request, StaplerResponse response) throws IOException {
+	public HttpResponse doSound(StaplerRequest request, StaplerResponse response) {
     	final SoundsAgentActionDescriptor descriptor = getDescriptor();
     	Integer	version = null;
     	
