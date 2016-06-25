@@ -16,7 +16,7 @@
 	</developers>
 
 	<artifactId>sounds</artifactId>
-	<version>0.5-SNAPSHOT</version>
+	<version>0.6-SNAPSHOT</version>
 	<packaging>hpi</packaging>
 
 	<name>Jenkins Sounds plugin</name>
@@ -48,6 +48,7 @@
 		<plugins>
 			<plugin>
 				<artifactId>maven-release-plugin</artifactId>
+				<version>2.5.3</version>
 				<configuration>
 					<goals>deploy</goals>
 				</configuration>
@@ -66,7 +67,8 @@
         <connection>scm:git:ssh://github.com/jenkinsci/sounds-plugin.git</connection>
         <developerConnection>scm:git:ssh://git@github.com/jenkinsci/sounds-plugin.git</developerConnection>
         <url>https://github.com/jenkinsci/sounds-plugin</url>
-    </scm>
+      <tag>HEAD</tag>
+  </scm>
 
 	<repositories>
 		<repository>

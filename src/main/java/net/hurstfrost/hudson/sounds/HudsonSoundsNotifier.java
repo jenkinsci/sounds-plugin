@@ -707,4 +707,20 @@ public class HudsonSoundsNotifier extends Notifier {
 		
 		return foundEvent;
 	}
+<<<<<<< HEAD
+=======
+
+	protected static String toUri(String path) {
+		if (StringUtils.isEmpty(path)) {
+			return "";
+		}
+		
+		if (path.startsWith("http://") || path.startsWith("file:/")) {
+			return path;
+		}
+		
+		// Try to make sense of this as a filing system path
+		return new File(path).toURI().toString();
+	}
+>>>>>>> remotes/origin/master
 }
