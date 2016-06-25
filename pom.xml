@@ -17,7 +17,7 @@
 	<url>http://wiki.jenkins-ci.org/display/JENKINS/Jenkins+Sounds+plugin</url>
 
 	<artifactId>sounds</artifactId>
-	<version>0.5</version>
+	<version>0.6-SNAPSHOT</version>
 	<packaging>hpi</packaging>
 	<name>Jenkins Sounds plugin</name>
 
@@ -44,7 +44,7 @@
         <connection>scm:git:ssh://github.com/jenkinsci/sounds-plugin.git</connection>
         <developerConnection>scm:git:ssh://git@github.com/jenkinsci/sounds-plugin.git</developerConnection>
         <url>https://github.com/jenkinsci/sounds-plugin</url>
-      <tag>sounds-0.5</tag>
+      <tag>HEAD</tag>
   </scm>
 
 	<repositories>
