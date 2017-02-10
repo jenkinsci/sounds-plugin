@@ -42,6 +42,7 @@
         <license>
             <name>MIT License</name>
             <url>http://opensource.org/licenses/MIT</url>
+            <distribution>repo</distribution>
         </license>
     </licenses>
 
@@ -74,7 +75,8 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>		</plugins>
+            </plugin>
+        </plugins>
 	</build>
 
 	<distributionManagement>
@@ -89,7 +91,7 @@
         <developerConnection>scm:git:ssh://git@github.com/jenkinsci/sounds-plugin.git</developerConnection>
         <url>https://github.com/jenkinsci/sounds-plugin</url>
         <tag>HEAD</tag>
-  </scm>
+    </scm>
 
 	<repositories>
 		<repository>
