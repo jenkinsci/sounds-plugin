@@ -277,7 +277,7 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
 
             ByteArrayOutputStream dest = new ByteArrayOutputStream();
             AudioSystem.write(source, AudioFileFormat.Type.WAVE, dest);
-            String encodeBase64String = "data:audio/wav;base64," + new String(Base64.encodeBase64(dest.toByteArray(), false));
+            String encodeBase64String = "data:audio/wav;base64," + new String(Base64.encodeBase64(dest.toByteArray(), false), "UTF-8");
             addSound(encodeBase64String, afterDelayMs);
         }
 
@@ -299,7 +299,7 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
     		// src isn't a valid URL
     	}
     	
-    	if (url == null && src.startsWith("data:") || url.getProtocol().equalsIgnoreCase("data")) {
+    	if (url == null && src.startsWith("data:") || url != null && url.getProtocol().equalsIgnoreCase("data")) {
     		// NOTE: This seems to fail due to request size limitation of Jetty
     		
     		// It's an immediate audio resource, transcoding not yet supported
@@ -347,7 +347,7 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
     	Integer	version = null;
     	
     	try {
-			version = new Integer(request.getParameter("version"));
+			version = Integer.valueOf(request.getParameter("version"));
 		} catch (NumberFormatException e) {
 			// Missing or invalid version
 		}

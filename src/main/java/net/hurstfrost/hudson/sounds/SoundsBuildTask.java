@@ -76,7 +76,7 @@ public class SoundsBuildTask extends Builder {
 		EnvVars vars = build.getEnvironment(listener);
     	switch (soundSource.sourceType) {
 		case INTERNAL:
-	    	listener.getLogger().format("Playing internal sound '%s'\n", soundSource.soundId);
+	    	listener.getLogger().format("Playing internal sound '%s'%n", soundSource.soundId);
 			try {
 				HudsonSoundsDescriptor.getDescriptor().playSound(soundSource.soundId, afterDelayMs, vars);
 			} catch (Exception e) {
@@ -85,7 +85,7 @@ public class SoundsBuildTask extends Builder {
 			}
 			break;
 		case URL:
-	    	listener.getLogger().format("Playing sound at '%s'\n", soundSource.url);
+	    	listener.getLogger().format("Playing sound at '%s'%n", soundSource.url);
 			try {
                 HudsonSoundsDescriptor.getDescriptor().playSoundFromUrl(soundSource.url, afterDelayMs, vars);
 			} catch (Exception e) {

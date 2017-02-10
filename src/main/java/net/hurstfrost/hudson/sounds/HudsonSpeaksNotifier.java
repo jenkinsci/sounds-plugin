@@ -97,13 +97,7 @@ public class HudsonSpeaksNotifier extends Notifier {
 		final XMLOutput xmlOutput = XMLOutput.createXMLOutput(writer);
 		final String script = "<?xml version=\"1.0\"?>\n<j:jelly trim=\"false\" xmlns:j=\"jelly:core\" xmlns:x=\"jelly:xml\" xmlns:html=\"jelly:html\">" + template + "</j:jelly>";
 
-		byte[] bytes;
-		try {
-			bytes = script.getBytes("UTF-8");
-		} catch (Exception e) {
-			// Probably never happens
-			bytes = script.getBytes();
-		}
+		byte[] bytes = script.getBytes("UTF-8");
 
 		jellyContext.runScript(new InputSource(new ByteArrayInputStream(bytes)), xmlOutput);
 

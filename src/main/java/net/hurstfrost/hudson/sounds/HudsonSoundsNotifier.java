@@ -257,7 +257,7 @@ public class HudsonSoundsNotifier extends Notifier {
 				} finally {
 					IOUtils.closeQuietly(zipInputStream);
 				}
-			} catch (Exception e) {
+			} catch (IOException | URISyntaxException e) {
 				// Can't find archive (this would have already been notified by doCheckSoundArchive() )
 			}
 			
@@ -580,7 +580,7 @@ public class HudsonSoundsNotifier extends Notifier {
 			throw new IOException("Unable to get input stream for " + soundBite);
 	    }
 	    
-	    private class ProcessKiller extends Thread {
+	    private static class ProcessKiller extends Thread {
 			private final Process p;
 			
 			private long	killAfter;

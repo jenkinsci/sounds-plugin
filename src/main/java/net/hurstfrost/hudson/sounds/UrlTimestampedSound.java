@@ -4,6 +4,7 @@
 package net.hurstfrost.hudson.sounds;
 
 import hudson.model.Hudson;
+import jenkins.model.Jenkins;
 
 import java.net.URL;
 
@@ -25,7 +26,7 @@ class UrlTimestampedSound extends AbstractTimestamptedSound {
 			return url.toString();
 		}
 		
-		return Hudson.getInstance().getRootUrl() + "sounds/sound?v=" + version;
+		return Jenkins.getInstance().getRootUrl() + "sounds/sound?v=" + version;
 	}
 	
 	@Override
