@@ -20,7 +20,7 @@ public class MaryTTSTest {
     public void numberOfAvailableVoices() {
         Collection<JenkinsVoice> voices = maryTTS.getVoiceLibrary().getAvailableVoices();
 
-        assertEquals(8, voices.size());
+        assertEquals(7, voices.size());
     }
 
     @Test

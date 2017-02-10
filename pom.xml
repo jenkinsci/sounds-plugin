@@ -125,6 +125,12 @@
             <version>2.4</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpcore</artifactId>
+            <version>4.4.1</version>
+            <scope>test</scope>
+        </dependency>
 
         <dependency>
             <!-- A female German hidden semi-Markov model voice, built from voice recordings provided by the BITS project at the Bavarian Archive of Speech Signals -->
