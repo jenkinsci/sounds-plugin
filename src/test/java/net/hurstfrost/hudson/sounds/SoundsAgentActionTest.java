@@ -1,48 +1,44 @@
 package net.hurstfrost.hudson.sounds;
 
-import static org.easymock.EasyMock.*;
-
-import java.io.InputStream;
-import java.net.URL;
-
-import javax.servlet.http.Cookie;
-import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.DataLine;
-import javax.sound.sampled.SourceDataLine;
-import javax.sound.sampled.UnsupportedAudioFileException;
-import javax.sound.sampled.DataLine.Info;
-
-import hudson.model.Hudson;
 import net.hurstfrost.hudson.sounds.HudsonSoundsNotifier.PLAY_METHOD;
 import net.hurstfrost.hudson.sounds.SoundsAgentAction.SoundsAgentActionDescriptor;
-
-import org.easymock.EasyMock;
-import org.jvnet.hudson.test.HudsonTestCase;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.jvnet.hudson.test.JenkinsRule;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
 
-public class SoundsAgentActionTest extends HudsonTestCase {
+import javax.servlet.http.Cookie;
+
+import static org.easymock.EasyMock.*;
+import static org.junit.Assert.*;
+
+public class SoundsAgentActionTest {
+    @Rule public JenkinsRule j = new JenkinsRule();
+
 	private SoundsAgentAction instance;
 	private SoundsAgentActionDescriptor descriptor;
 	private StaplerRequest request;
 	private StaplerResponse response;
 
-	@Override
-	protected void setUp() throws Exception {
-		super.setUp();
-		descriptor = (SoundsAgentActionDescriptor) Hudson.getInstance().getDescriptor("SoundsAgentAction");
+//	@Override
+    @Before
+	public void before() throws Exception {
+//		super.setUp();
+		descriptor = (SoundsAgentActionDescriptor) j.jenkins.getDescriptor("SoundsAgentAction");
 		instance = new SoundsAgentAction();
-		
+
 		descriptor.version = 10;
-		
+
 		request = createMock(StaplerRequest.class);
 		response = createMock(StaplerResponse.class);
-		
-		HudsonSoundsNotifier.getSoundsDescriptor().setPlayMethod(PLAY_METHOD.BROWSER);
+
+		HudsonSoundsNotifier.HudsonSoundsDescriptor.getDescriptor().setPlayMethod(PLAY_METHOD.BROWSER);
 	}
 
-	public void testCancelSounds() {
+	@Test
+    public void testCancelSounds() {
 		// given:
 		descriptor.addSound("sound1", 0);
 		descriptor.addSound("sound2", 0);
@@ -60,7 +56,8 @@ public class SoundsAgentActionTest extends HudsonTestCase {
 		assertEquals(13, jsonResponse.jsonObject.optLong("v"));
 		assertTrue(jsonResponse.jsonObject.optBoolean("x"));
 	}
-	
+
+    @Test
 	public void testGetSoundsWithNoVersionParameterOrCookie() throws Exception {
 		descriptor.addSound("sound1", 0);
 		descriptor.addSound("sound2", 0);
@@ -77,7 +74,8 @@ public class SoundsAgentActionTest extends HudsonTestCase {
 		
 		verify(request, response);
 	}
-	
+
+    @Test
 	public void testGetSoundsWithCookieButNoVersionParameter() throws Exception {
 		descriptor.addSound("sound1", 0);
 		descriptor.addSound("sound2", 0);
@@ -95,7 +93,8 @@ public class SoundsAgentActionTest extends HudsonTestCase {
 		
 		verify(request, response);
 	}
-	
+
+    @Test
 	public void testGetSoundsReturnsNoPlayedSounds() throws Exception {
 		descriptor.addSound("sound1", 0);
 		descriptor.addSound("sound2", 0);
@@ -112,7 +111,8 @@ public class SoundsAgentActionTest extends HudsonTestCase {
 		
 		verify(request, response);
 	}
-	
+
+    @Test
 	public void testGetSoundsReturnsUnplayedSounds() throws Exception {
 		descriptor.addSound("sound1", 0);
 		descriptor.addSound("sound2", 0);
@@ -129,7 +129,8 @@ public class SoundsAgentActionTest extends HudsonTestCase {
 		
 		verify(request, response);
 	}
-	
+
+    @Test
 	public void testGetSoundsReturnsMutedWhenMutedLocally() {
 		descriptor.addSound("sound1", 0);
 		descriptor.addSound("sound2", 0);
@@ -148,7 +149,8 @@ public class SoundsAgentActionTest extends HudsonTestCase {
 		
 		verify(request, response);
 	}
-	
+
+    @Test
 	public void testGetSoundsHasSyncDelay() throws Exception {
 		descriptor.addSound("sound1", null);
 		
@@ -183,7 +185,8 @@ public class SoundsAgentActionTest extends HudsonTestCase {
 		
 		verify(request, response);
 	}
-	
+
+    @Test
 	public void testGetSoundsInImmediateAreNotDelayed() throws Exception {
 		descriptor.addSound("sound1", 0);
 		
@@ -198,7 +201,8 @@ public class SoundsAgentActionTest extends HudsonTestCase {
 		
 		verify(request, response);
 	}
-	
+
+    @Test
 	public void testSoundAtOffset() throws Exception {
 		descriptor.addSound("sound1", 0);
 		descriptor.addSound("sound2", 0);
@@ -208,7 +212,8 @@ public class SoundsAgentActionTest extends HudsonTestCase {
 		assertEquals("sound2", descriptor.soundAtOffset(11).getUrl(null));
 		assertNull(descriptor.soundAtOffset(12));
 	}
-	
+
+    @Test
 	public void testSoundsAreRemovedAfter5s() throws Exception {
 		descriptor.addSound("sound1", 0);
 		Thread.sleep(1000);

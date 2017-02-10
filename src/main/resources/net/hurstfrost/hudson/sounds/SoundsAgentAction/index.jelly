@@ -47,6 +47,21 @@
                             </f:entry>
                             <f:validateButton method="testUrl" title="Test" with="soundUrl" />
                         </f:section>
+                        <f:section title="Speak">
+                            <f:entry title="Voice" field="voiceId">
+                                <input type="hidden" name="_.selectedVoiceId" />
+                                <select class="setting-input" name="_.voiceId" onchange="findPrevious(this, function(){return true}).value = this.value">
+                                    <option value="">(choose a voice)</option>
+                                    <j:forEach var="v" items="${descriptor.voices}">
+                                        <f:option value="${v.id}">${v.description} [${v.gender}_${v.locale}]</f:option>
+                                    </j:forEach>
+                                </select>
+                            </f:entry>
+                            <f:entry title="Text" field="textToSpeak">
+                                <f:textbox default="Jenkins can speak." />
+                            </f:entry>
+                            <f:validateButton method="testSpeech" title="Test" with="textToSpeak,voiceId" />
+                        </f:section>
                     </tbody></table></form>
 				</j:if>
                 <j:if test="${!h.hasPermission(it, it.PERMISSION)}">

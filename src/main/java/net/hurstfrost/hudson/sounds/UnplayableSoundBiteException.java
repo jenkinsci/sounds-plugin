@@ -8,23 +8,30 @@ import net.hurstfrost.hudson.sounds.HudsonSoundsNotifier.HudsonSoundsDescriptor;
 @SuppressWarnings("serial")
 public class UnplayableSoundBiteException extends Exception {
 	private final HudsonSoundsDescriptor.SoundBite soundBite;
-
-	public HudsonSoundsDescriptor.SoundBite getSoundBite() {
-		return soundBite;
-	}
+    private final String sound;
 
 	public UnplayableSoundBiteException(HudsonSoundsDescriptor.SoundBite bite, Exception e) {
 		super(e);
 		soundBite = bite;
+        this.sound = null;
+    }
+
+	public UnplayableSoundBiteException(String sound, Exception e) {
+		super(e);
+        this.sound = sound;
+        soundBite = null;
 	}
 
-	public UnplayableSoundBiteException(String message, Exception e) {
-		super(message, e);
+	public UnplayableSoundBiteException(String sound) {
+        this.sound = sound;
 		soundBite = null;
 	}
 
-	public UnplayableSoundBiteException(String message) {
-		super(message);
-		soundBite = null;
-	}
+    public String getSound() {
+        return sound;
+    }
+
+    public HudsonSoundsDescriptor.SoundBite getSoundBite() {
+        return soundBite;
+    }
 }

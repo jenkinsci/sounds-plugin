@@ -14,24 +14,32 @@ import net.hurstfrost.hudson.sounds.HudsonSoundsNotifier.PLAY_METHOD;
 import net.hurstfrost.hudson.sounds.HudsonSoundsNotifier.SoundEvent;
 import net.hurstfrost.hudson.sounds.HudsonSoundsNotifier.HudsonSoundsDescriptor.SoundBite;
 
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
 import org.jvnet.hudson.test.HudsonTestCase;
+import org.jvnet.hudson.test.JenkinsRule;
+import static org.junit.Assert.*;
 
-public class HudsonSoundsNotifierTest extends HudsonTestCase {
-	private HudsonSoundsDescriptor descriptor;
+public class HudsonSoundsNotifierTest {
+    @Rule
+    public JenkinsRule j = new JenkinsRule();
+
+    private HudsonSoundsDescriptor descriptor;
 	
 	private String TEST_ARCHIVE_URL;
 
 	private HudsonSoundsNotifier instance;
 
-	@Override
-	protected void setUp() throws Exception {
-		super.setUp();
+	@Before
+    public void before() throws Exception {
 		TEST_ARCHIVE_URL = HudsonSoundsNotifier.class.getResource("/test-sound-archive.zip").toString();
 		descriptor = (HudsonSoundsDescriptor) Hudson.getInstance().getDescriptor("HudsonSoundsNotifier");
 		instance = new HudsonSoundsNotifier();
 		descriptor.setPlayMethod(PLAY_METHOD.LOCAL);
 	}
-	
+
+    @Test
 	public void testRebuildIndex() throws Exception {
 		TreeMap<String, SoundBite> index = HudsonSoundsDescriptor.rebuildSoundsIndex(TEST_ARCHIVE_URL);
 		
@@ -44,14 +52,16 @@ public class HudsonSoundsNotifierTest extends HudsonTestCase {
 		assertEquals("sound-bite-library/YAWN.wav", index.get("YAWN").entryName);
 		assertEquals(TEST_ARCHIVE_URL, index.get("YAWN").url);
 	}
-	
+
+    @Test
 	public void testGetSounds() throws Exception {
 		descriptor.setSoundArchive(TEST_ARCHIVE_URL);
 		
 		assertNotNull(descriptor.getSounds());
 		assertEquals(6, descriptor.getSounds().size());
 	}
-	
+
+    @Test
 	public void testPlaySound() throws Exception {
 		descriptor.setSoundArchive(TEST_ARCHIVE_URL);
 		descriptor.getSounds();
@@ -64,7 +74,8 @@ public class HudsonSoundsNotifierTest extends HudsonTestCase {
 			e.printStackTrace();
 		}
 	}
-	
+
+    @Test
 	public void testPlayMp3() {
 		descriptor.setSoundArchive(TEST_ARCHIVE_URL);
 		descriptor.getSounds();
@@ -81,7 +92,8 @@ public class HudsonSoundsNotifierTest extends HudsonTestCase {
 			// No guarantee that machine running tests can play sounds, so swallow this.
 		}
 	}
-	
+
+    @Test
 	public void testPlayOgg() {
 		descriptor.setSoundArchive(TEST_ARCHIVE_URL);
 		descriptor.getSounds();
@@ -98,7 +110,8 @@ public class HudsonSoundsNotifierTest extends HudsonTestCase {
 			// No guarantee that machine running tests can play sounds, so swallow this.
 		}
 	}
-	
+
+    @Test
 	public void testSetSoundEvents() throws Exception {
 		// Force reindex
 		descriptor.setSoundArchive(TEST_ARCHIVE_URL);
@@ -128,7 +141,8 @@ public class HudsonSoundsNotifierTest extends HudsonTestCase {
 		assertEquals("YAWN", events.get(1).getSoundId());
 		assertEquals("doh", events.get(2).getSoundId());
 	}
-	
+
+    @Test
 	public void testGetSoundEventFor() throws Exception {
 		ArrayList<SoundEvent> events = new ArrayList<SoundEvent>();
 		

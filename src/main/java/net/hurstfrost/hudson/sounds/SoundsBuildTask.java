@@ -78,7 +78,7 @@ public class SoundsBuildTask extends Builder {
 		case INTERNAL:
 	    	listener.getLogger().format("Playing internal sound '%s'\n", soundSource.soundId);
 			try {
-				HudsonSoundsNotifier.getSoundsDescriptor().playSound(soundSource.soundId, afterDelayMs, vars);
+				HudsonSoundsDescriptor.getDescriptor().playSound(soundSource.soundId, afterDelayMs, vars);
 			} catch (Exception e) {
 				listener.error(e.toString());
 				return false;
@@ -87,7 +87,7 @@ public class SoundsBuildTask extends Builder {
 		case URL:
 	    	listener.getLogger().format("Playing sound at '%s'\n", soundSource.url);
 			try {
-				HudsonSoundsNotifier.getSoundsDescriptor().playSoundFromUrl(soundSource.url, afterDelayMs, vars);
+                HudsonSoundsDescriptor.getDescriptor().playSoundFromUrl(soundSource.url, afterDelayMs, vars);
 			} catch (Exception e) {
 				listener.error(e.toString());
 				return false;
@@ -176,14 +176,14 @@ public class SoundsBuildTask extends Builder {
 		}
         
         public List<SoundBite> getSounds() {
-        	HudsonSoundsDescriptor hudsonSoundsDescriptor = HudsonSoundsNotifier.getSoundsDescriptor();
+        	HudsonSoundsDescriptor hudsonSoundsDescriptor = HudsonSoundsDescriptor.getDescriptor();
         	
         	return hudsonSoundsDescriptor.getSounds();
 		}
 
 		public FormValidation doTestSound(@QueryParameter String selectedSound) {
 			try {
-				HudsonSoundsNotifier.getSoundsDescriptor().playSound(selectedSound, null);
+                HudsonSoundsDescriptor.getDescriptor().playSound(selectedSound, null);
 				return FormValidation.ok(String.format("Sound played successfully"));
 			} catch (Exception e) {
 				return FormValidation.error(String.format("Sound failed : " + e));
@@ -195,7 +195,7 @@ public class SoundsBuildTask extends Builder {
 
             try {
 				URL url = resourceResolver.toURL();
-				HudsonSoundsNotifier.getSoundsDescriptor().playSoundFromUrl(url, null, null);
+                HudsonSoundsDescriptor.getDescriptor().playSoundFromUrl(url, null, null);
 				return FormValidation.ok(String.format("Sound played successfully"));
 			} catch (Exception e) {
 				return FormValidation.error(String.format("Sound failed : " + e));

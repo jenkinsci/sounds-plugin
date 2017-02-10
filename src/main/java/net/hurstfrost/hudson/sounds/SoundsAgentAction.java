@@ -97,10 +97,6 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
     	return Jenkins.getInstance().getRootUrl();
     }
     
-    public HudsonSoundsDescriptor getSoundsDescriptor() {
-    	return HudsonSoundsNotifier.getSoundsDescriptor();
-	}
-
     @Extension
     public static final class SoundsAgentActionDescriptor extends Descriptor<SoundsAgentAction> {
 		transient protected	List<TimestampedSound>	wavsToPlay = new ArrayList<TimestampedSound>();
@@ -112,7 +108,11 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
 		public SoundsAgentActionDescriptor() {
 			load();
 		}
-    	
+
+        public static SoundsAgentActionDescriptor getDescriptor() {
+            return Jenkins.getInstance().getDescriptorByType(SoundsAgentActionDescriptor.class);
+        }
+
     	@Override
         public String getDisplayName() {
             return clazz.getSimpleName();
@@ -167,9 +167,15 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
 		}
 	    
         public List<SoundBite> getSounds() {
-        	HudsonSoundsDescriptor hudsonSoundsDescriptor = HudsonSoundsNotifier.getSoundsDescriptor();
+        	HudsonSoundsDescriptor hudsonSoundsDescriptor = HudsonSoundsDescriptor.getDescriptor();
         	
         	return hudsonSoundsDescriptor.getSounds();
+		}
+
+        public List<JenkinsVoice> getVoices() {
+        	HudsonSoundsDescriptor hudsonSoundsDescriptor = HudsonSoundsDescriptor.getDescriptor();
+
+        	return hudsonSoundsDescriptor.getVoices();
 		}
 
         public Set<AudioFileFormat.Type> getSupportedAudioFileTypes() {
@@ -211,7 +217,7 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
         
 		public FormValidation doTestSound(@QueryParameter String selectedSound) {
 			try {
-				HudsonSoundsNotifier.getSoundsDescriptor().playSound(selectedSound, null);
+                HudsonSoundsDescriptor.getDescriptor().playSound(selectedSound, null);
 				return FormValidation.ok(String.format("Sound played successfully"));
 			} catch (Exception e) {
 				return FormValidation.error(String.format("Sound failed : " + e));
@@ -226,12 +232,58 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
 					return response;
 				}
                 ResourceResolver resourceResolver = new ResourceResolver(soundUrl);
-				HudsonSoundsNotifier.getSoundsDescriptor().playSoundFromUrl(resourceResolver.toURL(), null, null);
+                HudsonSoundsDescriptor.getDescriptor().playSoundFromUrl(resourceResolver.toURL(), null, null);
 				return FormValidation.ok(String.format("Sound played successfully"));
 			} catch (Exception e) {
 				return FormValidation.error(String.format("Sound failed : " + e));
 			}
 		}
+
+		public FormValidation doTestSpeech(@QueryParameter String textToSpeak, @QueryParameter String voiceId) {
+			try {
+                HudsonSoundsDescriptor.getDescriptor().speakWithVoiceId(textToSpeak, voiceId);
+				return FormValidation.ok(String.format("Spoken successfully"));
+			} catch (Exception e) {
+				return FormValidation.error(String.format("Speak failed : " + e));
+			}
+		}
+
+        public void playSound(SoundBite soundBite, Integer afterDelayMs) throws UnplayableSoundBiteException {
+            try {
+                ZipInputStream zipInputStream = new ZipInputStream(new ResourceResolver(soundBite.url).getInputStream());
+                try {
+                    ZipEntry entry;
+                    while ((entry = zipInputStream.getNextEntry()) != null) {
+                        if (!entry.getName().equals(soundBite.entryName)) {
+                            continue;
+                        }
+
+                        final BufferedInputStream stream = new BufferedInputStream(zipInputStream);
+                        playSound(stream, afterDelayMs);
+                        IOUtils.closeQuietly(stream);
+                    }
+                } finally {
+                    IOUtils.closeQuietly(zipInputStream);
+                }
+            } catch (UnsupportedAudioFileException e) {
+                throw new UnplayableSoundBiteException(soundBite, e);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        protected void playSound(InputStream stream, Integer afterDelayMs) throws UnsupportedAudioFileException, IOException {
+            AudioInputStream source = HudsonSoundsDescriptor.asAudioInputStream(stream);
+
+            ByteArrayOutputStream dest = new ByteArrayOutputStream();
+            AudioSystem.write(source, AudioFileFormat.Type.WAVE, dest);
+            String encodeBase64String = "data:audio/wav;base64," + new String(Base64.encodeBase64(dest.toByteArray(), false));
+            addSound(encodeBase64String, afterDelayMs);
+        }
+
+        protected void playSound(URL url, Integer afterDelayMs) {
+            addSound(url, afterDelayMs);
+        }
     }
     
     public HttpResponse doPlaySound(@QueryParameter String src, @QueryParameter Integer delay) {
@@ -262,16 +314,16 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
 		// Try to load audio locally
 		try {
 			URLConnection connection = url.openConnection();
-			playSound(connection.getInputStream(), delay);
+			getDescriptor().playSound(connection.getInputStream(), delay);
 			return FormValidation.ok();
 		} catch (Exception e) {
 			if (url.getProtocol().toLowerCase().startsWith("http")) {
 				// Sound could not be interpreted by Java, but maybe HTML5 could do better, so send URL straight through
-				playSound(url, delay);
+                getDescriptor().playSound(url, delay);
 				return FormValidation.ok();
 			} else if (url.getProtocol().toLowerCase().startsWith("file")) {
 				// file:// urls can't be sent to browser, so stream the file to them
-				playSound(url, delay);
+                getDescriptor().playSound(url, delay);
 				return FormValidation.ok();
 			}
 
@@ -306,7 +358,7 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
     public JSONHttpResponse doGetSounds(StaplerRequest req, StaplerResponse rsp, @QueryParameter Integer version) {
     	final JSONObject jsonObject = new JSONObject();
 
-    	if (HudsonSoundsNotifier.getSoundsDescriptor().getPlayMethod() == PLAY_METHOD.BROWSER) {
+    	if (HudsonSoundsDescriptor.getDescriptor().getPlayMethod() == PLAY_METHOD.BROWSER) {
     		SoundsAgentActionDescriptor descriptor = getDescriptor();
     		synchronized (descriptor) {
     			int	newVersion = descriptor.version + descriptor.wavsToPlay.size();
@@ -448,42 +500,5 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
 
     protected boolean isMuted(StaplerRequest req) {
 		return isGlobalMute() || isLocalMute(req);
-	}
-
-	public void playSound(SoundBite soundBite, Integer afterDelayMs) throws UnplayableSoundBiteException {
-		try {
-			ZipInputStream zipInputStream = new ZipInputStream(new ResourceResolver(soundBite.url).getInputStream());
-			try {
-				ZipEntry entry;
-				while ((entry = zipInputStream.getNextEntry()) != null) {
-					if (!entry.getName().equals(soundBite.entryName)) {
-						continue;
-					}
-
-					final BufferedInputStream stream = new BufferedInputStream(zipInputStream);
-					playSound(stream, afterDelayMs);
-                    IOUtils.closeQuietly(stream);
-				}
-			} finally {
-				IOUtils.closeQuietly(zipInputStream);
-			}
-		} catch (UnsupportedAudioFileException e) {
-			throw new UnplayableSoundBiteException(soundBite, e);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
-	protected void playSound(InputStream stream, Integer afterDelayMs) throws UnsupportedAudioFileException, IOException {
-		AudioInputStream source = AudioSystem.getAudioInputStream(stream);
-
-		ByteArrayOutputStream dest = new ByteArrayOutputStream();
-		AudioSystem.write(source, AudioFileFormat.Type.WAVE, dest);
-		String encodeBase64String = "data:audio/wav;base64," + new String(Base64.encodeBase64(dest.toByteArray(), false));
-		getDescriptor().addSound(encodeBase64String, afterDelayMs);
-	}
-
-	protected void playSound(URL url, Integer afterDelayMs) {
-		getDescriptor().addSound(url, afterDelayMs);
 	}
 }

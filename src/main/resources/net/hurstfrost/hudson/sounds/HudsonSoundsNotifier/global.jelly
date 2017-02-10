@@ -5,6 +5,16 @@
 		<f:entry title="${%Sound archive location}" field="soundArchive" help="/plugin/sounds/help-globalConfig-archive.html">
 		     <f:textbox placeholder="classpath:sound-archive.zip" />
 		</f:entry>
+        <f:entry title="${%Default voice}" field="voiceId">
+            <input type="hidden" name="_.defaultVoiceId" value="${descriptor.defaultVoiceId}" />
+            <select class="setting-input" name="_.voiceId" onchange="findPrevious(this, function(){return true}).value = this.value">
+                <option value="">(choose a voice)</option>
+                <j:forEach var="v" items="${descriptor.voices}">
+                    <f:option value="${v.id}" selected="${v.id==descriptor.defaultVoiceId}">${v.description} [${v.gender}_${v.locale}]</f:option>
+                </j:forEach>
+            </select>
+        </f:entry>
+        <f:entry title="${%Sound output method:}">
 		<f:radioBlock name="playMethod" value="BROWSER" title="Play through HTML5 Audio enabled browser." checked="${descriptor.playMethod=='BROWSER'}" help="/plugin/sounds/help-globalConfig-browser.html">
 		</f:radioBlock>
 		<f:radioBlock name="playMethod" value="LOCAL" title="Play on local sound hardware." checked="${descriptor.playMethod=='LOCAL'}" help="/plugin/sounds/help-globalConfig-local.html">
@@ -17,6 +27,7 @@
 			     <f:textbox />
 			</f:entry>
 		</f:radioBlock>
+        </f:entry>
 		<f:advanced>
 			<f:entry title="Test sound" field="sound">
 				<div class="warning">You must save any changes above before trying to test sounds.</div>

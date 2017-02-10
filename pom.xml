@@ -15,6 +15,7 @@
 		</developer>
 	</developers>
 
+    <!--<groupId>net.hurstfrost.test</groupId>-->
 	<artifactId>sounds</artifactId>
 	<version>0.6-SNAPSHOT</version>
 	<packaging>hpi</packaging>
@@ -53,7 +54,27 @@
 					<goals>deploy</goals>
 				</configuration>
 			</plugin>
-		</plugins>
+            <plugin>
+                <groupId>com.googlecode.maven-download-plugin</groupId>
+                <artifactId>maven-download-plugin</artifactId>
+                <version>1.1.0</version>
+                <executions>
+                    <execution>
+                        <!-- the wget goal actually binds itself to this phase by default -->
+                        <id>fetch-marytts-components.xml</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>wget</goal>
+                        </goals>
+                        <configuration>
+                            <url>https://raw.github.com/marytts/marytts/master/download/marytts-components.xml</url>
+                            <outputFileName>marytts-components.xml</outputFileName>
+                            <!-- default target location, just to demonstrate the parameter -->
+                            <outputDirectory>${project.build.outputDirectory}</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>		</plugins>
 	</build>
 
 	<distributionManagement>
@@ -75,6 +96,11 @@
 			<id>repo.jenkins-ci.org</id>
 			<url>http://repo.jenkins-ci.org/public/</url>
 		</repository>
+		<repository>
+            <id>central</id>
+            <name>jcenter</name>
+            <url>https://jcenter.bintray.com</url>
+		</repository>
 	</repositories>
 
 	<pluginRepositories>
@@ -88,7 +114,7 @@
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
-			<version>4.3.1</version>
+			<version>4.12</version>
 			<scope>test</scope>
 		</dependency>
         <dependency>
@@ -97,5 +123,89 @@
             <version>2.4</version>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <!-- A female German hidden semi-Markov model voice, built from voice recordings provided by the BITS project at the Bavarian Archive of Speech Signals -->
+            <groupId>de.dfki.mary</groupId>
+            <artifactId>voice-bits1-hsmm</artifactId>
+            <version>5.2</version>
+        </dependency>
+        <dependency>
+            <!-- A male German hidden semi-Markov model voice, built from voice recordings provided by the BITS project at the Bavarian Archive of Speech Signals -->
+            <groupId>de.dfki.mary</groupId>
+            <artifactId>voice-bits3-hsmm</artifactId>
+            <version>5.2</version>
+        </dependency>
+
+        <dependency>
+            <groupId>de.dfki.mary</groupId>
+            <artifactId>marytts-lang-en</artifactId>
+            <version>5.2</version>
+        </dependency>
+        <dependency>
+            <groupId>de.dfki.mary</groupId>
+            <artifactId>marytts-lang-de</artifactId>
+            <version>5.2</version>
+        </dependency>
+        <dependency>
+            <groupId>de.dfki.mary</groupId>
+            <artifactId>marytts-lang-fr</artifactId>
+            <version>5.2</version>
+        </dependency>
+
+        <dependency>
+            <!--  -->
+            <groupId>de.dfki.mary</groupId>
+            <artifactId>voice-cmu-bdl-hsmm</artifactId>
+            <version>5.2</version>
+        </dependency>
+
+<!--
+        <dependency>
+            &lt;!&ndash;  &ndash;&gt;
+            <groupId>de.dfki.mary</groupId>
+            <artifactId>voice-cmu-slt-hsmm</artifactId>
+            <version>5.2</version>
+        </dependency>
+-->
+
+        <dependency>
+            <!--  -->
+            <groupId>de.dfki.mary</groupId>
+            <artifactId>voice-dfki-prudence-hsmm</artifactId>
+            <version>5.2</version>
+        </dependency>
+        <dependency>
+            <!--  -->
+            <groupId>de.dfki.mary</groupId>
+            <artifactId>voice-dfki-poppy-hsmm</artifactId>
+            <version>5.2</version>
+        </dependency>
+        <dependency>
+            <!--  -->
+            <groupId>de.dfki.mary</groupId>
+            <artifactId>voice-dfki-spike-hsmm</artifactId>
+            <version>5.2</version>
+        </dependency>
+
+        <dependency>
+            <!--  -->
+            <groupId>de.dfki.mary</groupId>
+            <artifactId>voice-enst-camille-hsmm</artifactId>
+            <version>5.2</version>
+        </dependency>
+<!--
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+            <version>1.2.17</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jfree</groupId>
+            <artifactId>jcommon</artifactId>
+            <version>1.0.23</version>
+        </dependency>
+-->
 	</dependencies>
 </project>

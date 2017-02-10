@@ -1,7 +1,6 @@
 package net.hurstfrost.hudson.sounds;
 
 import hudson.Extension;
-import hudson.ExtensionList;
 import hudson.Launcher;
 import hudson.model.*;
 import hudson.tasks.BuildStepDescriptor;
@@ -11,6 +10,8 @@ import hudson.tasks.Publisher;
 import hudson.util.FormValidation;
 import hudson.EnvVars;
 import hudson.util.VersionNumber;
+import jenkins.model.Jenkins;
+import marytts.server.Mary;
 import net.sf.json.JSONObject;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.IOUtils;
@@ -156,11 +157,6 @@ public class HudsonSoundsNotifier extends Notifier {
 		return (HudsonSoundsDescriptor) super.getDescriptor();
 	}
 
-	public static HudsonSoundsDescriptor getSoundsDescriptor() {
-		HudsonSoundsDescriptor hudsonSoundsDescriptor = Hudson.getInstance().getDescriptorByType(HudsonSoundsNotifier.HudsonSoundsDescriptor.class);
-		return hudsonSoundsDescriptor;
-	}
-    
 	@Override
 	public boolean perform(final AbstractBuild<?, ?> build, final Launcher launcher, final BuildListener listener) throws InterruptedException, IOException {
 		SoundEvent event = getSoundEventFor(build.getResult(), build.getPreviousBuild()!=null?build.getPreviousBuild().getResult():null);
@@ -188,7 +184,9 @@ public class HudsonSoundsNotifier extends Notifier {
         public static final VersionNumber STAPLER_JSON_BREAKING_CHANGE_VERSION_NUMBER = new VersionNumber("1.445");
 
         private String	soundArchive = INTERNAL_ARCHIVE;
-		
+
+        private String	defaultVoiceId = null;
+
 		private PLAY_METHOD	playMethod = PLAY_METHOD.BROWSER;
 		
 		private String	systemCommand;
@@ -199,14 +197,25 @@ public class HudsonSoundsNotifier extends Notifier {
 
 		private transient boolean needsReindex;
 
+        private MaryTTS maryTTS;
+
 		public HudsonSoundsDescriptor() {
 			load();
 			needsReindex = true;
+            maryTTS = new MaryTTS();
 		}
-		
-		public List<SoundBite> getSounds() {
+
+        public static HudsonSoundsDescriptor getDescriptor() {
+            return Jenkins.getInstance().getDescriptorByType(HudsonSoundsDescriptor.class);
+        }
+
+        public List<SoundBite> getSounds() {
 			checkIndex();			
 			return new ArrayList<SoundBite>(sounds.values());
+		}
+
+		public List<JenkinsVoice> getVoices() {
+			return new ArrayList<>(maryTTS.getVoiceLibrary().getAvailableVoices());
 		}
 
 		private void checkIndex() {
@@ -216,11 +225,11 @@ public class HudsonSoundsNotifier extends Notifier {
 			}
 		}
 
-		public SoundBite getSound(String id) {
+		public SoundBite getSound(String soundId) {
 			checkIndex();			
 			
-			if (sounds != null && id != null) {
-				return sounds.get(id);
+			if (sounds != null && soundId != null) {
+				return sounds.get(soundId);
 			}
 			
 			return null;
@@ -291,6 +300,10 @@ public class HudsonSoundsNotifier extends Notifier {
 			sounds = null;
 		}
 
+		public String getDefaultVoiceId() {
+			return defaultVoiceId;
+		}
+
 		public PLAY_METHOD getPlayMethod() {
 			return playMethod;
 		}
@@ -343,13 +356,15 @@ public class HudsonSoundsNotifier extends Notifier {
 					Log.debug("Exception setting play method", e);
 				}
 			}
+            JenkinsVoice voice = maryTTS.getVoiceLibrary().getVoice(json.optString("defaultVoiceId"));
+            defaultVoiceId = voice != null ? voice.getId() : null;
 			save();
 			return true;
 		}
 
 		@Override
 		public String getDisplayName() {
-			return "Jenkins Sounds";
+			return "Audio Notification";
 		}
 
 		@Override
@@ -466,13 +481,7 @@ public class HudsonSoundsNotifier extends Notifier {
 	    protected void playSoundFromUrl(URL url, Integer afterDelayMs, EnvVars vars) throws UnplayableSoundBiteException {
 	    	switch (playMethod) {
 	    		case BROWSER:
-	    			ExtensionList<SoundsAgentAction> soundsAgents = SoundsAgentAction.all();
-	    			if (soundsAgents.isEmpty()) {
-		    			throw new RuntimeException("No SoundsAgentAction Extension found.");
-	    			}
-
-	    			SoundsAgentAction soundsAgentAction = soundsAgents.get(0);
-    				soundsAgentAction.playSound(url, afterDelayMs);
+                    SoundsAgentAction.SoundsAgentActionDescriptor.getDescriptor().playSound(url, afterDelayMs);
     				break;
 	    		default:
 	    	    	try {
@@ -490,21 +499,27 @@ public class HudsonSoundsNotifier extends Notifier {
 	    protected void playSound(String id, EnvVars vars) throws UnplayableSoundBiteException {
 	    	playSound(id, null, vars);
 	    }
+
+        protected void speak(String text) throws UnplayableSoundBiteException {
+            speakWithVoiceId(text, null);
+        }
 	    
-	    protected void playSound(String id, Integer afterDelayMs, EnvVars vars) throws UnplayableSoundBiteException {
-	    	SoundBite soundBite = getSound(id);
+        protected void speakWithVoiceId(String text, String voiceId) throws UnplayableSoundBiteException {
+            try {
+                playSoundFromInputStream(maryTTS.getAudio(text, voiceId != null ? voiceId : defaultVoiceId), null);
+            } catch (Exception e) {
+                throw new UnplayableSoundBiteException(text, e);
+            }
+        }
+
+	    protected void playSound(String soundId, Integer afterDelayMs, EnvVars vars) throws UnplayableSoundBiteException {
+	    	SoundBite soundBite = getSound(soundId);
 
 	    	if (soundBite != null) {
 	    		switch (playMethod) {
 		    		case BROWSER:
-		    			ExtensionList<SoundsAgentAction> soundsAgents = SoundsAgentAction.all();
-		    			if (!soundsAgents.isEmpty()) {
-		    				SoundsAgentAction soundsAgentAction = soundsAgents.get(0);
-	
-		    				soundsAgentAction.playSound(soundBite, afterDelayMs);
-		    				return;
-		    			}
-		    			throw new RuntimeException("No SoundsAgentAction Extension found.");
+                        SoundsAgentAction.SoundsAgentActionDescriptor.getDescriptor().playSound(soundBite, afterDelayMs);
+                        return;
 		    		default:
 		    			InputStream soundBiteInputStream = null;
 		    			
@@ -524,22 +539,33 @@ public class HudsonSoundsNotifier extends Notifier {
 			throw new UnplayableSoundBiteException("No such sound.");
 	    }
 
-		private void playSoundFromInputStream(InputStream soundBiteInputStream, EnvVars vars) throws LineUnavailableException, IOException, UnsupportedAudioFileException, Exception {
+		private void playSoundFromInputStream(InputStream soundInputStream, EnvVars vars) throws LineUnavailableException, IOException, UnsupportedAudioFileException, Exception {
 			try {
 				switch (playMethod) {
 					case LOCAL:
-						playSoundBite(AudioSystem.getAudioInputStream(soundBiteInputStream));
+						playSoundBite(asAudioInputStream(soundInputStream));
 						break;
 					case PIPE:
-						playSoundBite(soundBiteInputStream, vars != null ? vars.expand(systemCommand) : systemCommand);
+						playSoundBite(soundInputStream, vars != null ? vars.expand(systemCommand) : systemCommand);
 						break;
+                    case BROWSER:
+                        SoundsAgentAction.SoundsAgentActionDescriptor.getDescriptor().playSound(soundInputStream, null);
+                        break;
 				}
 			} finally {
-				IOUtils.closeQuietly(soundBiteInputStream);
+				IOUtils.closeQuietly(soundInputStream);
 			}
 		}
-	    
-	    protected InputStream getSoundBiteInputStream(SoundBite soundBite) throws IOException, URISyntaxException {
+
+        static AudioInputStream asAudioInputStream(InputStream soundBiteInputStream) throws IOException, UnsupportedAudioFileException {
+            if (soundBiteInputStream instanceof AudioInputStream) {
+                return (AudioInputStream) soundBiteInputStream;
+            }
+
+            return AudioSystem.getAudioInputStream(soundBiteInputStream);
+        }
+
+        protected InputStream getSoundBiteInputStream(SoundBite soundBite) throws IOException, URISyntaxException {
 			ZipInputStream zipInputStream = new ZipInputStream(new ResourceResolver(soundBite.url).getInputStream());
 
 			ZipEntry entry;
