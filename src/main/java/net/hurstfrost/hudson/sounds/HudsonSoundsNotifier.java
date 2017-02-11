@@ -21,6 +21,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 
+import javax.annotation.Nullable;
 import javax.sound.sampled.*;
 import javax.sound.sampled.DataLine.Info;
 import java.io.BufferedInputStream;
@@ -159,11 +160,15 @@ public class HudsonSoundsNotifier extends Notifier {
 
 	@Override
 	public boolean perform(final AbstractBuild<?, ?> build, final Launcher launcher, final BuildListener listener) throws InterruptedException, IOException {
-		SoundEvent event = getSoundEventFor(build.getResult(), build.getPreviousBuild()!=null?build.getPreviousBuild().getResult():null);
-		EnvVars vars = build.getEnvironment(listener);
-		
+        Result result = build.getResult();
+        AbstractBuild<?, ?> previousBuild = build.getPreviousBuild();
+        Result previousResult = previousBuild != null ? previousBuild.getResult() : null;
+
+        SoundEvent event = getSoundEventFor(result, previousResult);
+
 		if (event != null) {
 			try {
+                EnvVars vars = build.getEnvironment(listener);
 				getDescriptor().playSound(event.getSoundId(), vars);
 			} catch (UnplayableSoundBiteException e) {
 				listener.getLogger().println("Failed to play sound '" + event.getSoundId() + "' : " + e.toString());
@@ -206,7 +211,7 @@ public class HudsonSoundsNotifier extends Notifier {
 		}
 
         public static HudsonSoundsDescriptor getDescriptor() {
-            return Jenkins.getInstance().getDescriptorByType(HudsonSoundsDescriptor.class);
+            return JenkinsSoundsUtils.getJenkinsInstanceOrDie().getDescriptorByType(HudsonSoundsDescriptor.class);
         }
 
         public List<SoundBite> getSounds() {
@@ -506,7 +511,7 @@ public class HudsonSoundsNotifier extends Notifier {
 	    
         protected void speakWithVoiceId(String text, String voiceId) throws UnplayableSoundBiteException {
             try {
-                playSoundFromInputStream(maryTTS.getAudio(text, voiceId != null ? voiceId : defaultVoiceId), null);
+                playSoundFromInputStream(maryTTS.getAudio(text, StringUtils.isNotEmpty(voiceId) ? voiceId : defaultVoiceId), null);
             } catch (Exception e) {
                 throw new UnplayableSoundBiteException(text, e);
             }
@@ -521,10 +526,8 @@ public class HudsonSoundsNotifier extends Notifier {
                         SoundsAgentAction.SoundsAgentActionDescriptor.getDescriptor().playSound(soundBite, afterDelayMs);
                         return;
 		    		default:
-		    			InputStream soundBiteInputStream = null;
-		    			
 			    		try {
-							soundBiteInputStream = getSoundBiteInputStream(soundBite);
+                            InputStream soundBiteInputStream = getSoundBiteInputStream(soundBite);
 			    			
 							if (soundBiteInputStream != null) {
 								playSoundFromInputStream(soundBiteInputStream, vars);
@@ -713,7 +716,7 @@ public class HudsonSoundsNotifier extends Notifier {
 		this.soundEvents = validatedList;
 	}
 
-	public SoundEvent getSoundEventFor(Result result, Result previousResult) {
+	public SoundEvent getSoundEventFor(@Nullable Result result, @Nullable Result previousResult) {
 		if (CollectionUtils.isEmpty(soundEvents)) {
 			return null;
 		}

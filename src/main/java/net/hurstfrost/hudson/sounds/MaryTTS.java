@@ -121,7 +121,7 @@ public class MaryTTS {
     }
 
     private ClassLoader getJenkinsUberClassLoader() {
-        return Jenkins.getInstance() != null ? Jenkins.getInstance().getPluginManager().uberClassLoader : null;
+        return JenkinsSoundsUtils.getJenkinsInstanceOrDie().getPluginManager().uberClassLoader;
     }
 
     public AudioInputStream getAudio(String text) throws UnplayableSoundBiteException {

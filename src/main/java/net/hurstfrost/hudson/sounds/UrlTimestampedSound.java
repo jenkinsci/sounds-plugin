@@ -8,6 +8,8 @@ import jenkins.model.Jenkins;
 
 import java.net.URL;
 
+import static net.hurstfrost.hudson.sounds.JenkinsSoundsUtils.getJenkinsInstanceOrDie;
+
 class UrlTimestampedSound extends AbstractTimestamptedSound {
 	protected final URL	url;
 	
@@ -26,7 +28,7 @@ class UrlTimestampedSound extends AbstractTimestamptedSound {
 			return url.toString();
 		}
 		
-		return Jenkins.getInstance().getRootUrl() + "sounds/sound?v=" + version;
+		return getJenkinsInstanceOrDie().getRootUrl() + "sounds/sound?v=" + version;
 	}
 	
 	@Override

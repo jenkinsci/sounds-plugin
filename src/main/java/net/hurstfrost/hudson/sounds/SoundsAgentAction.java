@@ -39,6 +39,8 @@ import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import static net.hurstfrost.hudson.sounds.JenkinsSoundsUtils.getJenkinsInstanceOrDie;
+
 /*
  * TODO: Secure Sounds properly
  * TODO: JS sounds agent polling rate should be dictated by this class (slow down when disabled by config).
@@ -85,16 +87,16 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
     }
 
     public SoundsAgentActionDescriptor getDescriptor() {
-        return (SoundsAgentActionDescriptor) Jenkins.getInstance().getDescriptorOrDie(getClass());
+        return (SoundsAgentActionDescriptor) getJenkinsInstanceOrDie().getDescriptorOrDie(getClass());
     }
 
     public static ExtensionList<SoundsAgentAction> all() {
-        return Jenkins.getInstance().getExtensionList(SoundsAgentAction.class);
+        return getJenkinsInstanceOrDie().getExtensionList(SoundsAgentAction.class);
     }
-    
+
     public String getRootURL() {
     	// Why doesn't ${rootURL} work in script.jelly?
-    	return Jenkins.getInstance().getRootUrl();
+    	return getJenkinsInstanceOrDie().getRootUrl();
     }
     
     @Extension
@@ -110,7 +112,7 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
 		}
 
         public static SoundsAgentActionDescriptor getDescriptor() {
-            return Jenkins.getInstance().getDescriptorByType(SoundsAgentActionDescriptor.class);
+            return getJenkinsInstanceOrDie().getDescriptorByType(SoundsAgentActionDescriptor.class);
         }
 
     	@Override
@@ -332,7 +334,7 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
     }
     
     public HttpResponse doCancelSounds() {
-        Jenkins.getInstance().checkPermission(PERMISSION);
+        getJenkinsInstanceOrDie().checkPermission(PERMISSION);
 
 		SoundsAgentActionDescriptor descriptor = getDescriptor();
 		
@@ -367,15 +369,17 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
     			if (version == null) {
     				// Fall back to cookie (saves a page refresh from missing sound events)
     				Cookie[] cookies = req.getCookies();
-    				for (Cookie cookie : cookies) {
-    					if (cookie.getName().equals(COOKIE_NAME)) {
-    						try {
-    							version = Integer.parseInt(cookie.getValue());
-    						} catch (Exception e) {
-    							// Invalid verson number ignored
-    						}
-    					}
-    				}
+                    if (cookies != null) {
+                        for (Cookie cookie : cookies) {
+                            if (cookie.getName().equals(COOKIE_NAME)) {
+                                try {
+                                    version = Integer.parseInt(cookie.getValue());
+                                } catch (NumberFormatException e) {
+                                    // Invalid version number ignored
+                                }
+                            }
+                        }
+                    }
     			}
 
     			if (version != null && !isMuted(req)) {
@@ -412,6 +416,8 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
     	} else {
 			jsonObject.element("p", MUTED_POLL_INTERVAL);
     	}
+
+        rsp.setContentType("application/json");
     	
     	return new JSONHttpResponse(jsonObject);
     }
@@ -486,7 +492,7 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
     }
 
     public HttpResponse doGlobalMute(StaplerRequest req, StaplerResponse rsp) {
-        Jenkins.getInstance().checkPermission(PERMISSION);
+        getJenkinsInstanceOrDie().checkPermission(PERMISSION);
     	
     	getDescriptor().setGlobalMute(!getDescriptor().isGlobalMute());
     	getDescriptor().cancelSounds();

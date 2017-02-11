@@ -1,5 +1,6 @@
 package net.hurstfrost.hudson.sounds;
 
+import com.gargoylesoftware.htmlunit.Page;
 import net.hurstfrost.hudson.sounds.HudsonSoundsNotifier.PLAY_METHOD;
 import net.hurstfrost.hudson.sounds.SoundsAgentAction.SoundsAgentActionDescriptor;
 import org.junit.Before;
@@ -8,24 +9,26 @@ import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
+import org.xml.sax.SAXException;
 
 import javax.servlet.http.Cookie;
+
+import java.io.IOException;
 
 import static org.easymock.EasyMock.*;
 import static org.junit.Assert.*;
 
 public class SoundsAgentActionTest {
-    @Rule public JenkinsRule j = new JenkinsRule();
+    @Rule
+    public JenkinsRule j = new JenkinsRule();
 
 	private SoundsAgentAction instance;
 	private SoundsAgentActionDescriptor descriptor;
 	private StaplerRequest request;
 	private StaplerResponse response;
 
-//	@Override
     @Before
 	public void before() throws Exception {
-//		super.setUp();
 		descriptor = (SoundsAgentActionDescriptor) j.jenkins.getDescriptor("SoundsAgentAction");
 		instance = new SoundsAgentAction();
 
@@ -44,8 +47,9 @@ public class SoundsAgentActionTest {
 		descriptor.addSound("sound2", 0);
 		expect(request.getCookies()).andReturn(new Cookie[0]).times(2);
 		response.addCookie((Cookie) anyObject());
-		
-		// when:
+        response.setContentType("application/json");
+
+        // when:
 		replay(request, response);
 		instance.doCancelSounds();
 		JSONHttpResponse jsonResponse = instance.doGetSounds(request, response, 10);
@@ -64,8 +68,9 @@ public class SoundsAgentActionTest {
 		
 		expect(request.getCookies()).andReturn(new Cookie[0]).times(2);
 		response.addCookie((Cookie) anyObject());
-		
-		replay(request, response);
+        response.setContentType("application/json");
+
+        replay(request, response);
 		
 		JSONHttpResponse	jsonResponse = instance.doGetSounds(request, response, null);
 		
@@ -83,8 +88,9 @@ public class SoundsAgentActionTest {
 		Cookie cookie = new Cookie("SoundsAgentActionDescriptorVersion", "10");
 		expect(request.getCookies()).andReturn(new Cookie[] { cookie }).times(3);
 		response.addCookie((Cookie) anyObject());
-		
-		replay(request, response);
+        response.setContentType("application/json");
+
+        replay(request, response);
 		
 		JSONHttpResponse	jsonResponse = instance.doGetSounds(request, response, null);
 		
@@ -100,6 +106,7 @@ public class SoundsAgentActionTest {
 		descriptor.addSound("sound2", 0);
 		
 		response.addCookie((Cookie) anyObject());
+        response.setContentType("application/json");
 		expect(request.getCookies()).andReturn(new Cookie[0]).times(2);
 		
 		replay(request, response);
@@ -118,6 +125,7 @@ public class SoundsAgentActionTest {
 		descriptor.addSound("sound2", 0);
 		
 		response.addCookie((Cookie) anyObject());
+        response.setContentType("application/json");
 		expect(request.getCookies()).andReturn(new Cookie[0]).times(2);
 		
 		replay(request, response);
@@ -136,7 +144,8 @@ public class SoundsAgentActionTest {
 		descriptor.addSound("sound2", 0);
 		
 		response.addCookie((Cookie) anyObject());
-		
+		response.setContentType("application/json");
+
 		expect(request.getCookies()).andReturn(new Cookie[] { new Cookie(SoundsAgentAction.MUTE_COOKIE_NAME, "muted") }).times(2);
 
 		replay(request, response);
@@ -157,8 +166,11 @@ public class SoundsAgentActionTest {
 		response.addCookie((Cookie) anyObject());
 		expectLastCall().times(3);
 		expect(request.getCookies()).andReturn(new Cookie[0]).times(6);
-		
-		replay(request, response);
+
+        response.setContentType("application/json");
+        expectLastCall().times(3);
+
+        replay(request, response);
 		
 		JSONHttpResponse	jsonResponse = instance.doGetSounds(request, response, 10);
 		int	expectedDelay = 2200;
@@ -191,6 +203,7 @@ public class SoundsAgentActionTest {
 		descriptor.addSound("sound1", 0);
 		
 		response.addCookie((Cookie) anyObject());
+        response.setContentType("application/json");
 		expect(request.getCookies()).andReturn(new Cookie[0]).times(2);
 		
 		replay(request, response);
@@ -245,7 +258,14 @@ public class SoundsAgentActionTest {
 		assertEquals(0, descriptor.wavsToPlay.size());
 		assertEquals(12, descriptor.version);
 	}
-	
+
+    @Test
+    public void testDoSoundsContentType() throws IOException, SAXException {
+        Page page = j.createWebClient().goTo("sounds/getSounds", "application/json");
+
+        assertTrue(page.getWebResponse().getContentType().toLowerCase().startsWith("application/json"));
+    }
+
 	/*
 	public void testAudioFormats() throws Exception {
 		String[]	urls = new String[] {
