@@ -3,13 +3,18 @@
 <script type="text/javascript" defer="defer">
   	function _sounds_ajaxJsonFetcherFactory(onSuccess, onFailure) {
 		return function() {
-			new Ajax.Request("${request.contextPath}/sounds/getSounds", {
-				parameters: { version: VERSION },
-  				onSuccess: function(rsp) {
-  					onSuccess(eval('x='+rsp.responseText))
-  				},
-  				onFailure: onFailure
-  			});
+                      var request = new XMLHttpRequest();
+                      request.open("GET", "${request.contextPath}/sounds/getSounds", true);
+                      request.onload = function() {
+                          if (request.status >= 200 && request.status < 400) {
+                              onSuccess(eval('x=' + request.response));
+                          } else {
+                              onFailure();
+                          }
+                      };
+                      request.onerror = function() { onFailure(); };
+                      request.send();
+                      return request;
   		}
 	}
   	
