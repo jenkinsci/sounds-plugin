@@ -1,6 +1,6 @@
 package net.hurstfrost.hudson.sounds;
 
-import static org.easymock.EasyMock.*;
+// import static org.easymock.EasyMock.*;
 
 import java.io.InputStream;
 import java.net.URL;
@@ -14,24 +14,28 @@ import javax.sound.sampled.UnsupportedAudioFileException;
 import javax.sound.sampled.DataLine.Info;
 
 import hudson.model.Hudson;
+import jenkins.model.Jenkins;
 import net.hurstfrost.hudson.sounds.HudsonSoundsNotifier.PLAY_METHOD;
 import net.hurstfrost.hudson.sounds.SoundsAgentAction.SoundsAgentActionDescriptor;
 
-import org.easymock.EasyMock;
-import org.jvnet.hudson.test.HudsonTestCase;
+import org.junit.Before;
+import org.junit.Rule;
+// import org.easymock.EasyMock;
+import org.jvnet.hudson.test.JenkinsRule;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
 
-public class SoundsAgentActionTest extends HudsonTestCase {
+public class SoundsAgentActionTest {
 	private SoundsAgentAction instance;
 	private SoundsAgentActionDescriptor descriptor;
 	private StaplerRequest request;
 	private StaplerResponse response;
 
-	@Override
-	protected void setUp() throws Exception {
-		super.setUp();
-		descriptor = (SoundsAgentActionDescriptor) Hudson.getInstance().getDescriptor("SoundsAgentAction");
+	@Rule private JenkinsRule j = new JenkinsRule();
+/*
+	@Before
+	protected void before() throws Exception {
+		descriptor = (SoundsAgentActionDescriptor) Jenkins.get().getDescriptor("SoundsAgentAction");
 		instance = new SoundsAgentAction();
 		
 		descriptor.version = 10;
