@@ -1,4 +1,7 @@
-target
-.idea
-**/.DS_Store
-.settings
+/target/
+/.idea/
+.DS_Store
+/.settings/
+/.vscode/
+/work/
+.classpath

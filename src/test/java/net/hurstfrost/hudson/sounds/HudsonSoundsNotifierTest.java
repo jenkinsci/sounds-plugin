@@ -1,7 +1,6 @@
 package net.hurstfrost.hudson.sounds;
 
-import hudson.model.Hudson;
-import hudson.model.Result;
+import static org.junit.Assert.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -9,29 +8,35 @@ import java.util.TreeMap;
 
 import javax.sound.sampled.UnsupportedAudioFileException;
 
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.jvnet.hudson.test.JenkinsRule;
+
 import net.hurstfrost.hudson.sounds.HudsonSoundsNotifier.HudsonSoundsDescriptor;
 import net.hurstfrost.hudson.sounds.HudsonSoundsNotifier.PLAY_METHOD;
 import net.hurstfrost.hudson.sounds.HudsonSoundsNotifier.SoundEvent;
 import net.hurstfrost.hudson.sounds.HudsonSoundsNotifier.HudsonSoundsDescriptor.SoundBite;
+import hudson.model.FreeStyleProject;
+import hudson.model.Result;
+import jenkins.model.Jenkins;
 
-import org.jvnet.hudson.test.HudsonTestCase;
-
-public class HudsonSoundsNotifierTest extends HudsonTestCase {
+public class HudsonSoundsNotifierTest {
 	private HudsonSoundsDescriptor descriptor;
 	
 	private String TEST_ARCHIVE_URL;
 
 	private HudsonSoundsNotifier instance;
 
-	@Override
-	protected void setUp() throws Exception {
-		super.setUp();
+	@Before
+	public void before() throws Exception {
 		TEST_ARCHIVE_URL = HudsonSoundsNotifier.class.getResource("/test-sound-archive.zip").toString();
-		descriptor = (HudsonSoundsDescriptor) Hudson.getInstance().getDescriptor("HudsonSoundsNotifier");
+		descriptor = (HudsonSoundsDescriptor) Jenkins.get().getDescriptor("HudsonSoundsNotifier");
 		instance = new HudsonSoundsNotifier();
 		descriptor.setPlayMethod(PLAY_METHOD.LOCAL);
 	}
-	
+
+    @Test
 	public void testRebuildIndex() throws Exception {
 		TreeMap<String, SoundBite> index = HudsonSoundsDescriptor.rebuildSoundsIndex(TEST_ARCHIVE_URL);
 		
@@ -45,6 +50,7 @@ public class HudsonSoundsNotifierTest extends HudsonTestCase {
 		assertEquals(TEST_ARCHIVE_URL, index.get("YAWN").url);
 	}
 	
+    @Test
 	public void testGetSounds() throws Exception {
 		descriptor.setSoundArchive(TEST_ARCHIVE_URL);
 		
@@ -52,6 +58,7 @@ public class HudsonSoundsNotifierTest extends HudsonTestCase {
 		assertEquals(6, descriptor.getSounds().size());
 	}
 	
+    @Test
 	public void testPlaySound() throws Exception {
 		descriptor.setSoundArchive(TEST_ARCHIVE_URL);
 		descriptor.getSounds();
@@ -65,6 +72,7 @@ public class HudsonSoundsNotifierTest extends HudsonTestCase {
 		}
 	}
 	
+    @Test
 	public void testPlayMp3() {
 		descriptor.setSoundArchive(TEST_ARCHIVE_URL);
 		descriptor.getSounds();
@@ -82,6 +90,7 @@ public class HudsonSoundsNotifierTest extends HudsonTestCase {
 		}
 	}
 	
+    @Test
 	public void testPlayOgg() {
 		descriptor.setSoundArchive(TEST_ARCHIVE_URL);
 		descriptor.getSounds();
@@ -99,6 +108,7 @@ public class HudsonSoundsNotifierTest extends HudsonTestCase {
 		}
 	}
 	
+    @Test
 	public void testSetSoundEvents() throws Exception {
 		// Force reindex
 		descriptor.setSoundArchive(TEST_ARCHIVE_URL);
@@ -129,6 +139,7 @@ public class HudsonSoundsNotifierTest extends HudsonTestCase {
 		assertEquals("doh", events.get(2).getSoundId());
 	}
 	
+    @Test
 	public void testGetSoundEventFor() throws Exception {
 		ArrayList<SoundEvent> events = new ArrayList<SoundEvent>();
 		
