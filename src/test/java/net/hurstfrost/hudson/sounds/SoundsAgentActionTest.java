@@ -17,54 +17,63 @@ import hudson.model.Hudson;
 import jenkins.model.Jenkins;
 import net.hurstfrost.hudson.sounds.HudsonSoundsNotifier.PLAY_METHOD;
 import net.hurstfrost.hudson.sounds.SoundsAgentAction.SoundsAgentActionDescriptor;
-
 import org.junit.Before;
 import org.junit.Rule;
-// import org.easymock.EasyMock;
+import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
+import org.mockito.Mockito;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 public class SoundsAgentActionTest {
+    @Rule
+    public JenkinsRule j = new JenkinsRule();
+
 	private SoundsAgentAction instance;
 	private SoundsAgentActionDescriptor descriptor;
 	private StaplerRequest request;
 	private StaplerResponse response;
 
-	@Rule private JenkinsRule j = new JenkinsRule();
-/*
-	@Before
-	protected void before() throws Exception {
-		descriptor = (SoundsAgentActionDescriptor) Jenkins.get().getDescriptor("SoundsAgentAction");
+    @Before
+	public void before() throws Exception {
+		descriptor = (SoundsAgentActionDescriptor) j.jenkins.getDescriptor("SoundsAgentAction");
 		instance = new SoundsAgentAction();
-		
+
 		descriptor.version = 10;
-		
-		request = createMock(StaplerRequest.class);
-		response = createMock(StaplerResponse.class);
-		
-		HudsonSoundsNotifier.getSoundsDescriptor().setPlayMethod(PLAY_METHOD.BROWSER);
+
+		request = mock(StaplerRequest.class);
+		response = mock(StaplerResponse.class);
+
+		HudsonSoundsNotifier.HudsonSoundsDescriptor.getDescriptor().setPlayMethod(PLAY_METHOD.BROWSER);
 	}
 
+	@Test
 	public void testCancelSounds() {
+    	when(request.getCookies()).thenReturn(new Cookie[0]);
+
 		// given:
 		descriptor.addSound("sound1", 0);
 		descriptor.addSound("sound2", 0);
-		expect(request.getCookies()).andReturn(new Cookie[0]).times(2);
-		response.addCookie((Cookie) anyObject());
-		
+
 		// when:
-		replay(request, response);
 		instance.doCancelSounds();
 		JSONHttpResponse jsonResponse = instance.doGetSounds(request, response, 10);
 		
 		// then:
-		verify(request, response);
 		assertFalse(jsonResponse.jsonObject.containsKey("play"));
 		assertEquals(13, jsonResponse.jsonObject.optLong("v"));
 		assertTrue(jsonResponse.jsonObject.optBoolean("x"));
+
+		verify(request, times(2)).getCookies();
+		verify(response).addCookie((Cookie) anyObject());
+		verify(response).setContentType("application/json");
+		verifyNoMoreInteractions(request, response);
 	}
-	
+
+/*
 	public void testGetSoundsWithNoVersionParameterOrCookie() throws Exception {
 		descriptor.addSound("sound1", 0);
 		descriptor.addSound("sound2", 0);

@@ -22,6 +22,9 @@ import hudson.model.Result;
 import jenkins.model.Jenkins;
 
 public class HudsonSoundsNotifierTest {
+	@Rule
+	public JenkinsRule j = new JenkinsRule();
+
 	private HudsonSoundsDescriptor descriptor;
 	
 	private String TEST_ARCHIVE_URL;

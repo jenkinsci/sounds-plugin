@@ -48,6 +48,8 @@ import org.kohsuke.stapler.Stapler;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
 
+import static net.hurstfrost.hudson.sounds.JenkinsSoundsUtils.getJenkinsInstanceOrDie;
+
 /*
  * TODO: Secure Sounds properly
  * TODO: JS sounds agent polling rate should be dictated by this class (slow down when disabled by config).
@@ -94,21 +96,17 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
     }
 
     public SoundsAgentActionDescriptor getDescriptor() {
-        return (SoundsAgentActionDescriptor) Hudson.getInstance().getDescriptorOrDie(getClass());
+        return (SoundsAgentActionDescriptor) getJenkinsInstanceOrDie().getDescriptorOrDie(getClass());
     }
 
     public static ExtensionList<SoundsAgentAction> all() {
-        return Hudson.getInstance().getExtensionList(SoundsAgentAction.class);
+        return getJenkinsInstanceOrDie().getExtensionList(SoundsAgentAction.class);
     }
-    
+
     public String getRootURL() {
     	// Why doesn't ${rootURL} work in script.jelly?
-    	return Hudson.getInstance().getRootUrl();
+    	return getJenkinsInstanceOrDie().getRootUrl();
     }
-    
-    public HudsonSoundsDescriptor getSoundsDescriptor() {
-    	return HudsonSoundsNotifier.getSoundsDescriptor();
-	}
 
     @Extension
     public static final class SoundsAgentActionDescriptor extends Descriptor<SoundsAgentAction> {
@@ -121,7 +119,11 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
 		public SoundsAgentActionDescriptor() {
 			load();
 		}
-    	
+
+        public static SoundsAgentActionDescriptor getDescriptor() {
+            return getJenkinsInstanceOrDie().getDescriptorByType(SoundsAgentActionDescriptor.class);
+        }
+
     	@Override
         public String getDisplayName() {
             return clazz.getSimpleName();
@@ -176,7 +178,7 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
 		}
 	    
         public List<SoundBite> getSounds() {
-        	HudsonSoundsDescriptor hudsonSoundsDescriptor = HudsonSoundsNotifier.getSoundsDescriptor();
+        	HudsonSoundsDescriptor hudsonSoundsDescriptor = HudsonSoundsDescriptor.getDescriptor();
         	
         	return hudsonSoundsDescriptor.getSounds();
 		}
@@ -194,37 +196,23 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
         	if (StringUtils.isEmpty(soundUrl)) {
         		return FormValidation.warning("Missing URL");
         	}
-        	
-        	try {
-				URL url = new URL(soundUrl);
-				
-				if (url.getProtocol().toLowerCase().equals("file")) {
-					URI	uri = new URI(soundUrl);
-					
-					File file = new File(uri);
-					
-					if (!file.exists() || !file.isFile()) {
-			        	return FormValidation.error("File not found or not readable");
-					}
-					
-					try {
-						FileInputStream inputStream = new FileInputStream(file);
-						
-						inputStream.close();
-					} catch (IOException e) {
-			        	return FormValidation.error("File not found or not readable");
-					}
- 				}
-			} catch (Exception e) {
-	        	return FormValidation.error("Invalid URL");
-			}
-			
+
+            ResourceResolver resourceResolver = new ResourceResolver(soundUrl);
+
+            if (!resourceResolver.isValid()) {
+                return FormValidation.error("Invalid URL");
+            }
+
+            if (!resourceResolver.exists()) {
+                return FormValidation.error("File not found or not readable");
+            }
+
 			return FormValidation.ok();
     	}
         
 		public FormValidation doTestSound(@QueryParameter String selectedSound) {
 			try {
-				HudsonSoundsNotifier.getSoundsDescriptor().playSound(selectedSound, null);
+                HudsonSoundsDescriptor.getDescriptor().playSound(selectedSound, null);
 				return FormValidation.ok(String.format("Sound played successfully"));
 			} catch (Exception e) {
 				return FormValidation.error(String.format("Sound failed : " + e));
@@ -233,19 +221,55 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
 		
 		public FormValidation doTestUrl(@QueryParameter String soundUrl) {
 			try {
-				soundUrl = HudsonSoundsNotifier.toUri(soundUrl);
 				FormValidation response = validateUrl(soundUrl);
 				
 				if (response.kind != FormValidation.Kind.OK) {
 					return response;
 				}
-				URL url = new URL(soundUrl);
-				HudsonSoundsNotifier.getSoundsDescriptor().playSoundFromUrl(url, null, null);
+                ResourceResolver resourceResolver = new ResourceResolver(soundUrl);
+                HudsonSoundsDescriptor.getDescriptor().playSoundFromUrl(resourceResolver.toURL(), null, null);
 				return FormValidation.ok(String.format("Sound played successfully"));
 			} catch (Exception e) {
 				return FormValidation.error(String.format("Sound failed : " + e));
 			}
 		}
+
+        public void playSound(SoundBite soundBite, Integer afterDelayMs) throws UnplayableSoundBiteException {
+            try {
+                ZipInputStream zipInputStream = new ZipInputStream(new ResourceResolver(soundBite.url).getInputStream());
+                try {
+                    ZipEntry entry;
+                    while ((entry = zipInputStream.getNextEntry()) != null) {
+                        if (!entry.getName().equals(soundBite.entryName)) {
+                            continue;
+                        }
+
+                        final BufferedInputStream stream = new BufferedInputStream(zipInputStream);
+                        playSound(stream, afterDelayMs);
+                        IOUtils.closeQuietly(stream);
+                    }
+                } finally {
+                    IOUtils.closeQuietly(zipInputStream);
+                }
+            } catch (UnsupportedAudioFileException e) {
+                throw new UnplayableSoundBiteException(soundBite, e);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        protected void playSound(InputStream stream, Integer afterDelayMs) throws UnsupportedAudioFileException, IOException {
+            AudioInputStream source = HudsonSoundsDescriptor.asAudioInputStream(stream);
+
+            ByteArrayOutputStream dest = new ByteArrayOutputStream();
+            AudioSystem.write(source, AudioFileFormat.Type.WAVE, dest);
+            String encodeBase64String = "data:audio/wav;base64," + new String(Base64.encodeBase64(dest.toByteArray(), false), "UTF-8");
+            addSound(encodeBase64String, afterDelayMs);
+        }
+
+        protected void playSound(URL url, Integer afterDelayMs) {
+            addSound(url, afterDelayMs);
+        }
     }
     
     public HttpResponse doPlaySound(@QueryParameter String src, @QueryParameter Integer delay) {
@@ -261,7 +285,7 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
     		// src isn't a valid URL
     	}
     	
-    	if (url == null && src.startsWith("data:") || url.getProtocol().equalsIgnoreCase("data")) {
+    	if (url == null && src.startsWith("data:") || url != null && url.getProtocol().equalsIgnoreCase("data")) {
     		// NOTE: This seems to fail due to request size limitation of Jetty
     		
     		// It's an immediate audio resource, transcoding not yet supported
@@ -276,16 +300,16 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
 		// Try to load audio locally
 		try {
 			URLConnection connection = url.openConnection();
-			playSound(connection.getInputStream(), delay);
+			getDescriptor().playSound(connection.getInputStream(), delay);
 			return FormValidation.ok();
 		} catch (Exception e) {
 			if (url.getProtocol().toLowerCase().startsWith("http")) {
 				// Sound could not be interpreted by Java, but maybe HTML5 could do better, so send URL straight through
-				playSound(url, delay);
+                getDescriptor().playSound(url, delay);
 				return FormValidation.ok();
 			} else if (url.getProtocol().toLowerCase().startsWith("file")) {
 				// file:// urls can't be sent to browser, so stream the file to them
-				playSound(url, delay);
+                getDescriptor().playSound(url, delay);
 				return FormValidation.ok();
 			}
 
@@ -294,7 +318,7 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
     }
     
     public HttpResponse doCancelSounds() {
-        Hudson.getInstance().checkPermission(PERMISSION);
+        getJenkinsInstanceOrDie().checkPermission(PERMISSION);
 
 		SoundsAgentActionDescriptor descriptor = getDescriptor();
 		
@@ -309,7 +333,7 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
     	Integer	version = null;
     	
     	try {
-			version = new Integer(request.getParameter("version"));
+			version = Integer.valueOf(request.getParameter("version"));
 		} catch (NumberFormatException e) {
 			// Missing or invalid version
 		}
@@ -320,7 +344,7 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
     public JSONHttpResponse doGetSounds(StaplerRequest req, StaplerResponse rsp, @QueryParameter Integer version) {
     	final JSONObject jsonObject = new JSONObject();
 
-    	if (HudsonSoundsNotifier.getSoundsDescriptor().getPlayMethod() == PLAY_METHOD.BROWSER) {
+    	if (HudsonSoundsDescriptor.getDescriptor().getPlayMethod() == PLAY_METHOD.BROWSER) {
     		SoundsAgentActionDescriptor descriptor = getDescriptor();
     		synchronized (descriptor) {
     			int	newVersion = descriptor.version + descriptor.wavsToPlay.size();
@@ -329,15 +353,17 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
     			if (version == null) {
     				// Fall back to cookie (saves a page refresh from missing sound events)
     				Cookie[] cookies = req.getCookies();
-    				for (Cookie cookie : cookies) {
-    					if (cookie.getName().equals(COOKIE_NAME)) {
-    						try {
-    							version = Integer.parseInt(cookie.getValue());
-    						} catch (Exception e) {
-    							// Invalid verson number ignored
-    						}
-    					}
-    				}
+                    if (cookies != null) {
+                        for (Cookie cookie : cookies) {
+                            if (cookie.getName().equals(COOKIE_NAME)) {
+                                try {
+                                    version = Integer.parseInt(cookie.getValue());
+                                } catch (NumberFormatException e) {
+                                    // Invalid version number ignored
+                                }
+                            }
+                        }
+                    }
     			}
 
     			if (version != null && !isMuted(req)) {
@@ -374,7 +400,9 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
     	} else {
 			jsonObject.element("p", MUTED_POLL_INTERVAL);
     	}
-    	
+
+        rsp.setContentType("application/json");
+
     	return new JSONHttpResponse(jsonObject);
     }
 
@@ -448,7 +476,7 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
     }
 
     public HttpResponse doGlobalMute(StaplerRequest req, StaplerResponse rsp) {
-    	Hudson.getInstance().checkPermission(PERMISSION);
+        getJenkinsInstanceOrDie().checkPermission(PERMISSION);
     	
     	getDescriptor().setGlobalMute(!getDescriptor().isGlobalMute());
     	getDescriptor().cancelSounds();
@@ -462,41 +490,5 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
 
     protected boolean isMuted(StaplerRequest req) {
 		return isGlobalMute() || isLocalMute(req);
-	}
-
-	public void playSound(SoundBite soundBite, Integer afterDelayMs) {
-		try {
-			URL url = new URL(soundBite.url);
-			URLConnection connection = url.openConnection();
-			ZipInputStream zipInputStream = new ZipInputStream(connection.getInputStream());
-			try {
-				ZipEntry entry;
-				while ((entry = zipInputStream.getNextEntry()) != null) {
-					if (!entry.getName().equals(soundBite.entryName)) {
-						continue;
-					}
-
-					final BufferedInputStream stream = new BufferedInputStream(zipInputStream);
-					playSound(stream, afterDelayMs);
-				}
-			} finally {
-				IOUtils.closeQuietly(zipInputStream);
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
-	protected void playSound(InputStream stream, Integer afterDelayMs) throws UnsupportedAudioFileException, IOException {
-		AudioInputStream source = AudioSystem.getAudioInputStream(stream);
-
-		ByteArrayOutputStream dest = new ByteArrayOutputStream();
-		AudioSystem.write(source, AudioFileFormat.Type.WAVE, dest);
-		String encodeBase64String = "data:audio/wav;base64," + new String(Base64.encodeBase64(dest.toByteArray(), false));
-		getDescriptor().addSound(encodeBase64String, afterDelayMs);
-	}
-
-	protected void playSound(URL url, Integer afterDelayMs) {
-		getDescriptor().addSound(url, afterDelayMs);
 	}
 }
