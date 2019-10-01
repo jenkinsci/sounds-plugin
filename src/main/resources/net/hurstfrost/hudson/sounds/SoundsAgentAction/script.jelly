@@ -1,3 +1,4 @@
+<?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler"><st:contentType value="text/javascript;charset=UTF-8" />
  	VERSION = null;
  	AUDIO_CAPABLE = _sounds_audioCapable();

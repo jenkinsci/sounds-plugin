@@ -1,1 +1,1 @@
-<div>This plugin allows Jenkins to play audio clips as build notifications.</div>
+<?jelly escape-by-default='true'?><div>This plugin allows Jenkins to play audio clips as build notifications.</div>
