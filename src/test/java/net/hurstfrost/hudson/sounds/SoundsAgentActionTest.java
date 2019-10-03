@@ -52,9 +52,8 @@ public class SoundsAgentActionTest {
 
 	@Test
 	public void testCancelSounds() {
-    	when(request.getCookies()).thenReturn(new Cookie[0]);
-
 		// given:
+		when(request.getCookies()).thenReturn(new Cookie[0]);
 		descriptor.addSound("sound1", 0);
 		descriptor.addSound("sound2", 0);
 
@@ -73,111 +72,110 @@ public class SoundsAgentActionTest {
 		verifyNoMoreInteractions(request, response);
 	}
 
-/*
+	@Test
 	public void testGetSoundsWithNoVersionParameterOrCookie() throws Exception {
+		when(request.getCookies()).thenReturn(new Cookie[0]);
 		descriptor.addSound("sound1", 0);
 		descriptor.addSound("sound2", 0);
-		
-		expect(request.getCookies()).andReturn(new Cookie[0]).times(2);
-		response.addCookie((Cookie) anyObject());
-		
-		replay(request, response);
-		
+
 		JSONHttpResponse	jsonResponse = instance.doGetSounds(request, response, null);
-		
+
 		assertEquals(12, jsonResponse.jsonObject.getInt("v"));
 		assertNull(jsonResponse.jsonObject.opt("play"));
-		
-		verify(request, response);
+
+		verify(request, times(2)).getCookies();
+		verify(response).addCookie((Cookie) anyObject());
+		verify(response).setContentType("application/json");
+		verifyNoMoreInteractions(request, response);
 	}
-	
+
+	@Test
 	public void testGetSoundsWithCookieButNoVersionParameter() throws Exception {
+		Cookie cookie = new Cookie("SoundsAgentActionDescriptorVersion", "10");
+		when(request.getCookies()).thenReturn(new Cookie[] { cookie });
 		descriptor.addSound("sound1", 0);
 		descriptor.addSound("sound2", 0);
-		
-		Cookie cookie = new Cookie("SoundsAgentActionDescriptorVersion", "10");
-		expect(request.getCookies()).andReturn(new Cookie[] { cookie }).times(3);
-		response.addCookie((Cookie) anyObject());
-		
-		replay(request, response);
-		
+
 		JSONHttpResponse	jsonResponse = instance.doGetSounds(request, response, null);
-		
+
 		assertEquals(11, jsonResponse.jsonObject.getInt("v"));
 		assertEquals("sound1", jsonResponse.jsonObject.getString("play"));
-		
-		verify(request, response);
+
+		verify(request, times(3)).getCookies();
+		verify(response).addCookie((Cookie) anyObject());
+		verify(response).setContentType("application/json");
+		verifyNoMoreInteractions(request, response);
 	}
-	
+
+	@Test
 	public void testGetSoundsReturnsNoPlayedSounds() throws Exception {
+		when(request.getCookies()).thenReturn(new Cookie[0]);
 		descriptor.addSound("sound1", 0);
 		descriptor.addSound("sound2", 0);
-		
-		response.addCookie((Cookie) anyObject());
-		expect(request.getCookies()).andReturn(new Cookie[0]).times(2);
-		
-		replay(request, response);
 		
 		JSONHttpResponse	jsonResponse = instance.doGetSounds(request, response, 12);
 		
 		assertEquals(12, jsonResponse.jsonObject.getInt("v"));
 		assertNull(jsonResponse.jsonObject.opt("play"));
-		
-		verify(request, response);
+
+		verify(request, times(2)).getCookies();
+		verify(response).addCookie((Cookie) anyObject());
+		verify(response).setContentType("application/json");
+		verifyNoMoreInteractions(request, response);
 	}
-	
+
+	@Test
 	public void testGetSoundsReturnsUnplayedSounds() throws Exception {
+		when(request.getCookies()).thenReturn(new Cookie[0]);
 		descriptor.addSound("sound1", 0);
 		descriptor.addSound("sound2", 0);
-		
-		response.addCookie((Cookie) anyObject());
-		expect(request.getCookies()).andReturn(new Cookie[0]).times(2);
-		
-		replay(request, response);
 		
 		JSONHttpResponse	jsonResponse = instance.doGetSounds(request, response, 10);
 		
 		assertEquals(11, jsonResponse.jsonObject.getInt("v"));
 		assertEquals("sound1", jsonResponse.jsonObject.getString("play"));
-		
-		verify(request, response);
+
+		verify(request, times(2)).getCookies();
+		verify(response).addCookie((Cookie) anyObject());
+		verify(response).setContentType("application/json");
+		verifyNoMoreInteractions(request, response);
 	}
-	
+
+	@Test
 	public void testGetSoundsReturnsMutedWhenMutedLocally() {
+		when(request.getCookies()).thenReturn(new Cookie[] { new Cookie(SoundsAgentAction.MUTE_COOKIE_NAME, "muted") });
 		descriptor.addSound("sound1", 0);
 		descriptor.addSound("sound2", 0);
-		
-		response.addCookie((Cookie) anyObject());
-		
-		expect(request.getCookies()).andReturn(new Cookie[] { new Cookie(SoundsAgentAction.MUTE_COOKIE_NAME, "muted") }).times(2);
-
-		replay(request, response);
 		
 		JSONHttpResponse	jsonResponse = instance.doGetSounds(request, response, 10);
 		
 		assertEquals(-1, jsonResponse.jsonObject.getInt("v"));
 		assertFalse(jsonResponse.jsonObject.containsKey("play"));
 		assertEquals(60000, jsonResponse.jsonObject.getInt("p"));
-		
-		verify(request, response);
+
+		verify(request, times(2)).getCookies();
+		verify(response).addCookie((Cookie) anyObject());
+		verify(response).setContentType("application/json");
+		verifyNoMoreInteractions(request, response);
 	}
-	
+
+	@Test
 	public void testGetSoundsHasSyncDelay() throws Exception {
+		when(request.getCookies()).thenReturn(new Cookie[0]);
 		descriptor.addSound("sound1", null);
 		
-		response.addCookie((Cookie) anyObject());
-		expectLastCall().times(3);
-		expect(request.getCookies()).andReturn(new Cookie[0]).times(6);
-		
-		replay(request, response);
-		
 		JSONHttpResponse	jsonResponse = instance.doGetSounds(request, response, 10);
+
 		int	expectedDelay = 2200;
 		
 		assertEquals(11, jsonResponse.jsonObject.getInt("v"));
 		assertEquals("sound1", jsonResponse.jsonObject.getString("play"));
 		assertTrue(String.format("d=%d", jsonResponse.jsonObject.getLong("d")), expectedDelay >= jsonResponse.jsonObject.getLong("d") && jsonResponse.jsonObject.getLong("d") > expectedDelay-100);
-		
+
+		verify(request, times(2)).getCookies();
+		verify(response, times(1)).addCookie((Cookie) anyObject());
+		verify(response, times(1)).setContentType("application/json");
+
 		Thread.sleep(500);
 		expectedDelay -= 500;
 		
@@ -185,7 +183,11 @@ public class SoundsAgentActionTest {
 		assertEquals(11, jsonResponse.jsonObject.getInt("v"));
 		assertEquals("sound1", jsonResponse.jsonObject.getString("play"));
 		assertTrue(String.format("d=%d", jsonResponse.jsonObject.getLong("d")), expectedDelay >= jsonResponse.jsonObject.getLong("d") && jsonResponse.jsonObject.getLong("d") > expectedDelay-100);
-		
+
+		verify(request, times(4)).getCookies();
+		verify(response, times(2)).addCookie((Cookie) anyObject());
+		verify(response, times(2)).setContentType("application/json");
+
 		Thread.sleep(500);
 		expectedDelay -= 500;
 		
@@ -193,25 +195,29 @@ public class SoundsAgentActionTest {
 		assertEquals(11, jsonResponse.jsonObject.getInt("v"));
 		assertEquals("sound1", jsonResponse.jsonObject.getString("play"));
 		assertTrue(String.format("d=%d", jsonResponse.jsonObject.getLong("d")), expectedDelay >= jsonResponse.jsonObject.getLong("d") && jsonResponse.jsonObject.getLong("d") > expectedDelay-100);
-		
-		verify(request, response);
+
+		verify(request, times(6)).getCookies();
+		verify(response, times(3)).addCookie((Cookie) anyObject());
+		verify(response, times(3)).setContentType("application/json");
+		verifyNoMoreInteractions(request, response);
 	}
-	
+
+	@Test
 	public void testGetSoundsInImmediateAreNotDelayed() throws Exception {
+		when(request.getCookies()).thenReturn(new Cookie[0]);
 		descriptor.addSound("sound1", 0);
-		
-		response.addCookie((Cookie) anyObject());
-		expect(request.getCookies()).andReturn(new Cookie[0]).times(2);
-		
-		replay(request, response);
 		
 		JSONHttpResponse	jsonResponse = instance.doGetSounds(request, response, 10);
 		
 		assertEquals(0, jsonResponse.jsonObject.optLong("d"));
-		
-		verify(request, response);
+
+		verify(request, times(2)).getCookies();
+		verify(response).addCookie((Cookie) anyObject());
+		verify(response).setContentType("application/json");
+		verifyNoMoreInteractions(request, response);
 	}
-	
+
+	@Test
 	public void testSoundAtOffset() throws Exception {
 		descriptor.addSound("sound1", 0);
 		descriptor.addSound("sound2", 0);
@@ -221,7 +227,8 @@ public class SoundsAgentActionTest {
 		assertEquals("sound2", descriptor.soundAtOffset(11).getUrl(null));
 		assertNull(descriptor.soundAtOffset(12));
 	}
-	
+
+	@Test
 	public void testSoundsAreRemovedAfter5s() throws Exception {
 		descriptor.addSound("sound1", 0);
 		Thread.sleep(1000);
@@ -253,8 +260,9 @@ public class SoundsAgentActionTest {
 		assertEquals(0, descriptor.wavsToPlay.size());
 		assertEquals(12, descriptor.version);
 	}
-	
+
 	/*
+	@Test
 	public void testAudioFormats() throws Exception {
 		String[]	urls = new String[] {
 			"file:///System/Library/Sounds/Tink.aiff",
@@ -292,6 +300,7 @@ public class SoundsAgentActionTest {
 		}
 	}
 	
+	@Test
 	public void testPlaySound() throws Exception {
 		InputStream inputStream = new URL("file:///System/Library/Sounds/Tink.aiff").openStream();
 		instance.playSound(inputStream, true);
