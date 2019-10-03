@@ -1,20 +1,5 @@
 package net.hurstfrost.hudson.sounds;
 
-// import static org.easymock.EasyMock.*;
-
-import java.io.InputStream;
-import java.net.URL;
-
-import javax.servlet.http.Cookie;
-import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.DataLine;
-import javax.sound.sampled.SourceDataLine;
-import javax.sound.sampled.UnsupportedAudioFileException;
-import javax.sound.sampled.DataLine.Info;
-
-import hudson.model.Hudson;
-import jenkins.model.Jenkins;
 import net.hurstfrost.hudson.sounds.HudsonSoundsNotifier.PLAY_METHOD;
 import net.hurstfrost.hudson.sounds.SoundsAgentAction.SoundsAgentActionDescriptor;
 import org.junit.Before;
@@ -23,7 +8,8 @@ import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
-import org.mockito.Mockito;
+
+import javax.servlet.http.Cookie;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
