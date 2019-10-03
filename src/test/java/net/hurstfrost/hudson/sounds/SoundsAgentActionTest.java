@@ -51,7 +51,7 @@ public class SoundsAgentActionTest {
 	}
 
 	@Test
-	public void testCancelSounds() {
+	public void doCancelSounds() {
 		// given:
 		when(request.getCookies()).thenReturn(new Cookie[0]);
 		descriptor.addSound("sound1", 0);
@@ -73,7 +73,7 @@ public class SoundsAgentActionTest {
 	}
 
 	@Test
-	public void testGetSoundsWithNoVersionParameterOrCookie() throws Exception {
+	public void doGetSoundsWithNoVersionParameterOrCookie() throws Exception {
 		when(request.getCookies()).thenReturn(new Cookie[0]);
 		descriptor.addSound("sound1", 0);
 		descriptor.addSound("sound2", 0);
@@ -90,7 +90,7 @@ public class SoundsAgentActionTest {
 	}
 
 	@Test
-	public void testGetSoundsWithCookieButNoVersionParameter() throws Exception {
+	public void doGetSoundsWithCookieButNoVersionParameter() throws Exception {
 		Cookie cookie = new Cookie("SoundsAgentActionDescriptorVersion", "10");
 		when(request.getCookies()).thenReturn(new Cookie[] { cookie });
 		descriptor.addSound("sound1", 0);
@@ -108,7 +108,7 @@ public class SoundsAgentActionTest {
 	}
 
 	@Test
-	public void testGetSoundsReturnsNoPlayedSounds() throws Exception {
+	public void doGetSoundsReturnsNoPlayedSounds() throws Exception {
 		when(request.getCookies()).thenReturn(new Cookie[0]);
 		descriptor.addSound("sound1", 0);
 		descriptor.addSound("sound2", 0);
@@ -125,7 +125,7 @@ public class SoundsAgentActionTest {
 	}
 
 	@Test
-	public void testGetSoundsReturnsUnplayedSounds() throws Exception {
+	public void doGetSoundsReturnsUnplayedSounds() throws Exception {
 		when(request.getCookies()).thenReturn(new Cookie[0]);
 		descriptor.addSound("sound1", 0);
 		descriptor.addSound("sound2", 0);
@@ -142,7 +142,7 @@ public class SoundsAgentActionTest {
 	}
 
 	@Test
-	public void testGetSoundsReturnsMutedWhenMutedLocally() {
+	public void doGetSoundsReturnsMutedWhenMutedLocally() {
 		when(request.getCookies()).thenReturn(new Cookie[] { new Cookie(SoundsAgentAction.MUTE_COOKIE_NAME, "muted") });
 		descriptor.addSound("sound1", 0);
 		descriptor.addSound("sound2", 0);
@@ -160,7 +160,7 @@ public class SoundsAgentActionTest {
 	}
 
 	@Test
-	public void testGetSoundsHasSyncDelay() throws Exception {
+	public void doGetSoundsHasSyncDelay() throws Exception {
 		when(request.getCookies()).thenReturn(new Cookie[0]);
 		descriptor.addSound("sound1", null);
 		
@@ -203,7 +203,7 @@ public class SoundsAgentActionTest {
 	}
 
 	@Test
-	public void testGetSoundsInImmediateAreNotDelayed() throws Exception {
+	public void doGetSoundsInImmediateAreNotDelayed() throws Exception {
 		when(request.getCookies()).thenReturn(new Cookie[0]);
 		descriptor.addSound("sound1", 0);
 		
@@ -218,7 +218,7 @@ public class SoundsAgentActionTest {
 	}
 
 	@Test
-	public void testSoundAtOffset() throws Exception {
+	public void soundAtOffset() throws Exception {
 		descriptor.addSound("sound1", 0);
 		descriptor.addSound("sound2", 0);
 		
@@ -229,7 +229,7 @@ public class SoundsAgentActionTest {
 	}
 
 	@Test
-	public void testSoundsAreRemovedAfter5s() throws Exception {
+	public void soundsAreRemovedAfter5s() throws Exception {
 		descriptor.addSound("sound1", 0);
 		Thread.sleep(1000);
 		descriptor.addSound("sound2", 0);
