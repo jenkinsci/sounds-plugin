@@ -1,8 +1,11 @@
 package net.hurstfrost.hudson.sounds;
 
+import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import hudson.model.User;
 import hudson.security.AccessDeniedException2;
+import hudson.security.Permission;
 import hudson.util.FormValidation;
+import jenkins.model.Jenkins;
 import net.hurstfrost.hudson.sounds.HudsonSoundsNotifier.PLAY_METHOD;
 import net.hurstfrost.hudson.sounds.SoundsAgentAction.SoundsAgentActionDescriptor;
 import org.acegisecurity.context.SecurityContext;
@@ -17,6 +20,8 @@ import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
 
 import javax.servlet.http.Cookie;
+
+import java.net.HttpURLConnection;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -34,10 +39,12 @@ public class SoundsAgentActionTest {
 	@Before
 	public void before() throws Exception {
 		j.jenkins.setSecurityRealm(j.createDummySecurityRealm());
-		j.jenkins.setAuthorizationStrategy(new MockAuthorizationStrategy());
+		j.jenkins.setAuthorizationStrategy(new MockAuthorizationStrategy()
+				.grant(Jenkins.ADMINISTER).everywhere().to("admin")
+				.grant(Jenkins.READ).everywhere().to("noconfigure")
+				.grant(Jenkins.READ,Permission.CONFIGURE).everywhere().to("configure")
+		);
 		securityContext = SecurityContextHolder.getContext();
-
-		System.out.println(securityContext.getAuthentication());
 
 		descriptor = (SoundsAgentActionDescriptor) j.jenkins.getDescriptor("SoundsAgentAction");
 		instance = new SoundsAgentAction();
@@ -57,7 +64,7 @@ public class SoundsAgentActionTest {
 
 	@Test
 	public void doTestSoundWhenNotAuthenticated() {
-		securityContext.setAuthentication(User.getOrCreateByIdOrFullName("nopermissions").impersonate());
+		securityContext.setAuthentication(User.getOrCreateByIdOrFullName("noconfigure").impersonate());
 
 		try {
 			FormValidation formValidation = descriptor.doTestSound("YAWN");
@@ -77,6 +84,32 @@ public class SoundsAgentActionTest {
 			fail("Should have been denied.");
 		} catch (Exception e) {
 		}
+	}
+
+	@Test
+	public void directHttpDescriptorAccess() throws Exception {
+		JenkinsRule.WebClient webClient = j.createWebClient();
+
+		webClient.login("configure");
+
+		HtmlPage page = webClient.goTo("descriptorByName/net.hurstfrost.hudson.sounds.SoundsAgentAction/testUrl?soundUrl=http://localhost:8080/");
+		assertEquals("Sound played successfully", page.asText());
+
+		page = webClient.goTo("descriptorByName/net.hurstfrost.hudson.sounds.SoundsAgentAction/testSound?selectedSound=EXPLODE");
+		assertEquals("Sound played successfully", page.asText());
+
+		page = webClient.goTo("descriptorByName/net.hurstfrost.hudson.sounds.SoundsAgentAction/testSound?selectedSound=NO_SUCH_SOUND");
+		assertEquals("Sound failed : net.hurstfrost.hudson.sounds.UnplayableSoundBiteException: No such sound.", page.asText());
+	}
+
+	@Test
+	public void directHttpDescriptorAccessWithoutPermission() throws Exception {
+		JenkinsRule.WebClient webClient = j.createWebClient();
+
+		webClient.login("noconfigure");
+
+		webClient.assertFails("descriptorByName/net.hurstfrost.hudson.sounds.SoundsAgentAction/testUrl?soundUrl=http://localhost:8080/", HttpURLConnection.HTTP_FORBIDDEN);
+		webClient.assertFails("descriptorByName/net.hurstfrost.hudson.sounds.SoundsAgentAction/testUrl?soundUrl=http://localhost:8080/", HttpURLConnection.HTTP_FORBIDDEN);
 	}
 
 	@Test
@@ -103,7 +136,7 @@ public class SoundsAgentActionTest {
 
 	@Test
 	public void doCancelSoundsWithNotAuthenticated() {
-		securityContext.setAuthentication(User.getOrCreateByIdOrFullName("nopermissions").impersonate());
+		securityContext.setAuthentication(User.getOrCreateByIdOrFullName("noconfigure").impersonate());
 
 		try {
 			instance.doCancelSounds();
