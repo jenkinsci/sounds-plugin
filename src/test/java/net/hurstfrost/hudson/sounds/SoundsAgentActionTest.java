@@ -1,11 +1,18 @@
 package net.hurstfrost.hudson.sounds;
 
+import hudson.model.User;
+import hudson.security.AccessDeniedException2;
+import hudson.util.FormValidation;
 import net.hurstfrost.hudson.sounds.HudsonSoundsNotifier.PLAY_METHOD;
 import net.hurstfrost.hudson.sounds.SoundsAgentAction.SoundsAgentActionDescriptor;
+import org.acegisecurity.context.SecurityContext;
+import org.acegisecurity.context.SecurityContextHolder;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.MockAuthorizationStrategy;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
 
@@ -22,9 +29,16 @@ public class SoundsAgentActionTest {
 	private SoundsAgentActionDescriptor descriptor;
 	private StaplerRequest request;
 	private StaplerResponse response;
+	private SecurityContext securityContext;
 
-    @Before
+	@Before
 	public void before() throws Exception {
+		j.jenkins.setSecurityRealm(j.createDummySecurityRealm());
+		j.jenkins.setAuthorizationStrategy(new MockAuthorizationStrategy());
+		securityContext = SecurityContextHolder.getContext();
+
+		System.out.println(securityContext.getAuthentication());
+
 		descriptor = (SoundsAgentActionDescriptor) j.jenkins.getDescriptor("SoundsAgentAction");
 		instance = new SoundsAgentAction();
 
@@ -34,6 +48,35 @@ public class SoundsAgentActionTest {
 		response = mock(StaplerResponse.class);
 
 		HudsonSoundsNotifier.HudsonSoundsDescriptor.getDescriptor().setPlayMethod(PLAY_METHOD.BROWSER);
+	}
+
+	@Test
+	public void doTestSoundWhenAuthenticated() {
+		FormValidation formValidation = descriptor.doTestSound("YAWN");
+	}
+
+	@Test
+	public void doTestSoundWhenNotAuthenticated() {
+		securityContext.setAuthentication(User.getOrCreateByIdOrFullName("nopermissions").impersonate());
+
+		try {
+			FormValidation formValidation = descriptor.doTestSound("YAWN");
+
+			fail("Should have been denied.");
+		} catch (Exception e) {
+		}
+	}
+
+	@Test
+	public void doTestUrlWhenNotAuthenticated() {
+		securityContext.setAuthentication(User.getOrCreateByIdOrFullName("nopermissions").impersonate());
+
+		try {
+			FormValidation formValidation = descriptor.doTestUrl("YAWN");
+
+			fail("Should have been denied.");
+		} catch (Exception e) {
+		}
 	}
 
 	@Test
@@ -56,6 +99,18 @@ public class SoundsAgentActionTest {
 		verify(response).addCookie((Cookie) anyObject());
 		verify(response).setContentType("application/json");
 		verifyNoMoreInteractions(request, response);
+	}
+
+	@Test
+	public void doCancelSoundsWithNotAuthenticated() {
+		securityContext.setAuthentication(User.getOrCreateByIdOrFullName("nopermissions").impersonate());
+
+		try {
+			instance.doCancelSounds();
+
+			fail("Should have been denied.");
+		} catch (AccessDeniedException2 e) {
+		}
 	}
 
 	@Test

@@ -211,6 +211,8 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
     	}
         
 		public FormValidation doTestSound(@QueryParameter String selectedSound) {
+			getJenkinsInstanceOrDie().checkPermission(PERMISSION);
+
 			try {
                 HudsonSoundsDescriptor.getDescriptor().playSound(selectedSound, null);
 				return FormValidation.ok(String.format("Sound played successfully"));
@@ -220,6 +222,8 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
 		}
 		
 		public FormValidation doTestUrl(@QueryParameter String soundUrl) {
+			getJenkinsInstanceOrDie().checkPermission(PERMISSION);
+
 			try {
 				FormValidation response = validateUrl(soundUrl);
 				
