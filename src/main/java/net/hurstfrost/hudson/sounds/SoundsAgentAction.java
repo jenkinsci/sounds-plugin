@@ -258,7 +258,7 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
             } catch (UnsupportedAudioFileException e) {
                 throw new UnplayableSoundBiteException(soundBite, e);
             } catch (Exception e) {
-                e.printStackTrace();
+                throw new UnplayableSoundBiteException(soundBite, e);
             }
         }
 

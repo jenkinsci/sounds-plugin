@@ -1,5 +1,8 @@
 package net.hurstfrost.hudson.sounds;
 
+import com.gargoylesoftware.htmlunit.WebClientUtil;
+import com.gargoylesoftware.htmlunit.WebRequest;
+import com.gargoylesoftware.htmlunit.WebResponse;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import hudson.model.User;
 import hudson.security.AccessDeniedException2;
@@ -18,10 +21,15 @@ import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.MockAuthorizationStrategy;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
+import org.kohsuke.stapler.WebApp;
+import org.xml.sax.SAXException;
 
 import javax.servlet.http.Cookie;
 
+import java.io.IOException;
 import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.concurrent.Semaphore;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -57,6 +65,17 @@ public class SoundsAgentActionTest {
 		HudsonSoundsNotifier.HudsonSoundsDescriptor.getDescriptor().setPlayMethod(PLAY_METHOD.BROWSER);
 	}
 
+	@Before
+	public void prepareFilterListener(){
+		WebApp webApp = WebApp.get(j.jenkins.servletContext);
+		webApp.setFilteredDoActionTriggerListener((f, req, rsp, node) -> {
+			return false;
+		});
+		webApp.setFilteredGetterTriggerListener((f, req, rsp, node, expression) -> {
+			return false;
+		});
+	}
+
 	@Test
 	public void doTestSoundWhenAuthenticated() {
 		FormValidation formValidation = descriptor.doTestSound("YAWN");
@@ -79,7 +98,7 @@ public class SoundsAgentActionTest {
 		securityContext.setAuthentication(User.getOrCreateByIdOrFullName("nopermissions").impersonate());
 
 		try {
-			FormValidation formValidation = descriptor.doTestUrl("YAWN");
+			FormValidation formValidation = descriptor.doTestUrl("http://localhost:8080/");
 
 			fail("Should have been denied.");
 		} catch (Exception e) {
@@ -100,6 +119,67 @@ public class SoundsAgentActionTest {
 
 		page = webClient.goTo("descriptorByName/net.hurstfrost.hudson.sounds.SoundsAgentAction/testSound?selectedSound=NO_SUCH_SOUND");
 		assertEquals("Sound failed : net.hurstfrost.hudson.sounds.UnplayableSoundBiteException: No such sound.", page.asText());
+	}
+
+	@Test
+	public void webPlaysSound() throws Exception {
+		new Thread(() -> {
+			try {
+				JenkinsRule.WebClient backgroundWebClient = j.createWebClient();
+				backgroundWebClient.setJavaScriptEnabled(false);
+				backgroundWebClient.login("configure");
+				System.out.println("Background logged in");
+				Thread.sleep(6000);
+				HtmlPage page = backgroundWebClient.goTo("descriptorByName/net.hurstfrost.hudson.sounds.SoundsAgentAction/testUrl?soundUrl=http://localhost:8080/");
+
+				System.out.println(page.asText());
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}).start();
+
+		JenkinsRule.WebClient webClient = j.createWebClient();
+
+		webClient.setJavaScriptEnabled(false);
+		webClient.login("configure");
+		System.out.println("Test logged in");
+
+//		webClient.setJavaScriptEnabled(true);
+
+/*
+		webClient.addWebResponseListener((WebRequest webRequest, WebResponse webResponse) -> {
+			HtmlPage p = (HtmlPage) webClient.getCurrentWindow().getEnclosedPage();
+			try {
+//				p.executeJavaScript("console.log(_sounds_playSound)");
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		});
+*/
+
+//		webClient.interactiveJavaScriptDebugger();
+		webClient.setJavaScriptEnabled(true);
+		HtmlPage homepage = webClient.goTo("");
+//		webClient.setJavaScriptEnabled(true);
+//		webClient.getJavaScriptEngine().processPostponedActions();
+
+//		WebClientUtil.waitForJSExec(webClient);
+
+/*
+		webClient.waitForBackgroundJavaScript(1000);
+
+		try {
+			homepage.executeJavaScript("console.log(window._sounds_playSound)");
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		webClient.waitForBackgroundJavaScript(16000);
+*/
+
+		homepage.executeJavaScript("console.log('Did you see this?')");
+
+		System.out.println(homepage.asText());
 	}
 
 	@Test
