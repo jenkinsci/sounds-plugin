@@ -1,8 +1,6 @@
 package net.hurstfrost.hudson.sounds;
 
-import com.gargoylesoftware.htmlunit.WebClientUtil;
-import com.gargoylesoftware.htmlunit.WebRequest;
-import com.gargoylesoftware.htmlunit.WebResponse;
+import com.gargoylesoftware.htmlunit.*;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import hudson.model.User;
 import hudson.security.AccessDeniedException2;
@@ -106,7 +104,7 @@ public class SoundsAgentActionTest {
 	}
 
 	@Test
-	public void directHttpDescriptorAccess() throws Exception {
+	public void directHttpDescriptorAccessWithRequiredPermission() throws Exception {
 		JenkinsRule.WebClient webClient = j.createWebClient();
 
 		webClient.login("configure");
@@ -114,15 +112,26 @@ public class SoundsAgentActionTest {
 		HtmlPage page = webClient.goTo("descriptorByName/net.hurstfrost.hudson.sounds.SoundsAgentAction/testUrl?soundUrl=http://localhost:8080/");
 		assertEquals("Sound played successfully", page.asText());
 
-		page = webClient.goTo("descriptorByName/net.hurstfrost.hudson.sounds.SoundsAgentAction/testSound?selectedSound=EXPLODE");
-		assertEquals("Sound played successfully", page.asText());
-
 		page = webClient.goTo("descriptorByName/net.hurstfrost.hudson.sounds.SoundsAgentAction/testSound?selectedSound=NO_SUCH_SOUND");
-		assertEquals("Sound failed : net.hurstfrost.hudson.sounds.UnplayableSoundBiteException: No such sound.", page.asText());
+		assertEquals("Sound failed : net.hurstfrost.hudson.sounds.UnplayableSoundBiteException : No such sound.", page.asText());
 	}
 
-	@Test
+    @Test
+    public void directHttpDescriptorAccessWithoutPermission() throws Exception {
+        JenkinsRule.WebClient webClient = j.createWebClient();
+
+        webClient.login("noconfigure");
+
+        webClient.assertFails("descriptorByName/net.hurstfrost.hudson.sounds.SoundsAgentAction/testUrl?soundUrl=http://localhost:8080/", HttpURLConnection.HTTP_FORBIDDEN);
+        webClient.assertFails("descriptorByName/net.hurstfrost.hudson.sounds.SoundsAgentAction/testSound?selectedSound=EXPLODE", HttpURLConnection.HTTP_FORBIDDEN);
+    }
+
+    @Test
 	public void webPlaysSound() throws Exception {
+/*
+Unable to make this test work:
+  * can't inject JS into page to sense what sound was played.
+
 		new Thread(() -> {
 			try {
 				JenkinsRule.WebClient backgroundWebClient = j.createWebClient();
@@ -144,52 +153,10 @@ public class SoundsAgentActionTest {
 		webClient.login("configure");
 		System.out.println("Test logged in");
 
-//		webClient.setJavaScriptEnabled(true);
-
-/*
-		webClient.addWebResponseListener((WebRequest webRequest, WebResponse webResponse) -> {
-			HtmlPage p = (HtmlPage) webClient.getCurrentWindow().getEnclosedPage();
-			try {
-//				p.executeJavaScript("console.log(_sounds_playSound)");
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		});
-*/
-
-//		webClient.interactiveJavaScriptDebugger();
 		webClient.setJavaScriptEnabled(true);
 		HtmlPage homepage = webClient.goTo("");
-//		webClient.setJavaScriptEnabled(true);
-//		webClient.getJavaScriptEngine().processPostponedActions();
 
-//		WebClientUtil.waitForJSExec(webClient);
-
-/*
-		webClient.waitForBackgroundJavaScript(1000);
-
-		try {
-			homepage.executeJavaScript("console.log(window._sounds_playSound)");
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
-		webClient.waitForBackgroundJavaScript(16000);
-*/
-
-		homepage.executeJavaScript("console.log('Did you see this?')");
-
-		System.out.println(homepage.asText());
-	}
-
-	@Test
-	public void directHttpDescriptorAccessWithoutPermission() throws Exception {
-		JenkinsRule.WebClient webClient = j.createWebClient();
-
-		webClient.login("noconfigure");
-
-		webClient.assertFails("descriptorByName/net.hurstfrost.hudson.sounds.SoundsAgentAction/testUrl?soundUrl=http://localhost:8080/", HttpURLConnection.HTTP_FORBIDDEN);
-		webClient.assertFails("descriptorByName/net.hurstfrost.hudson.sounds.SoundsAgentAction/testUrl?soundUrl=http://localhost:8080/", HttpURLConnection.HTTP_FORBIDDEN);
+ */
 	}
 
 	@Test

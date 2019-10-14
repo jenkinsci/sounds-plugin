@@ -32,6 +32,6 @@ public class UnplayableSoundBiteException extends Exception {
 	public String toString() {
 		String s = getClass().getName();
 		String message = getLocalizedMessage();
-		return (s + " " + soundBite) + (message != null ? " : " + message : "");
+		return s +  (soundBite != null ? " " + soundBite : "") + (message != null ? " : " + message : "");
 	}
 }

@@ -90,7 +90,7 @@
  						_sounds_cancelSounds();
  					}
  					if (soundsResponse.play) {
- 						played = _sounds_playSound(soundsResponse.play, soundsResponse.d);
+ 						played = _sounds_playSound(soundsResponse.play, soundsResponse.d || 0);
  					}
 				  	_sounds_pollForSounds(jsonFetcher, soundsResponse.p);
  				} catch (e) {

@@ -4,16 +4,27 @@
 <script type="text/javascript" defer="defer">
   	function _sounds_ajaxJsonFetcherFactory(onSuccess, onFailure) {
 		return function() {
-			new Ajax.Request("${request.contextPath}/sounds/getSounds", {
-				parameters: { version: VERSION },
-  				onSuccess: function(rsp) {
-  					onSuccess(eval('x='+rsp.responseText))
-  				},
-  				onFailure: onFailure
-  			});
+		    var request = new XMLHttpRequest();
+		    request.responseType = 'json';
+		    request.open("GET", "${request.contextPath}/sounds/getSounds", true);
+            request.onload = function() {
+                if (request.status >= 200 &amp;&amp; request.status &lt; 400) {
+                    var responseObject = request.response;
+
+                    if (typeof responseObject === 'string') {
+                        responseObject = JSON.parse(responseObject);
+                    }
+                    onSuccess(responseObject);
+                } else {
+                    onFailure();
+                }
+            };
+            request.onerror = function() { onFailure(); };
+            request.send();
+            return request;
   		}
 	}
-  	
+
   	if (AUDIO_CAPABLE) {
 	  	_sounds_pollForSounds(_sounds_ajaxJsonFetcherFactory);
 	}
