@@ -93,7 +93,7 @@ public class SoundsAgentActionTest {
 	}
 
 	@Test
-	public void directHttpDescriptorAccessWithRequiredPermission() throws Exception {
+	public void directHttpDescriptorAccessWithPermission() throws Exception {
 		JenkinsRule.WebClient webClient = j.createWebClient();
 
 		webClient.login("configure");
