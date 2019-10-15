@@ -25,6 +25,8 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 
+import static net.hurstfrost.hudson.sounds.JenkinsSoundsUtils.getJenkinsInstanceOrDie;
+
 public class SoundsBuildTask extends Builder {
 	private final Integer	afterDelayMs;
 	
@@ -184,7 +186,9 @@ public class SoundsBuildTask extends Builder {
 		}
 
 		public FormValidation doTestSound(@QueryParameter String selectedSound) {
-			try {
+            getJenkinsInstanceOrDie().checkPermission(SoundsAgentAction.PERMISSION);
+
+            try {
                 HudsonSoundsDescriptor.getDescriptor().playSound(selectedSound, null);
 				return FormValidation.ok(String.format("Sound played successfully"));
 			} catch (Exception e) {
@@ -193,6 +197,8 @@ public class SoundsBuildTask extends Builder {
 		}
 		
 		public FormValidation doTestUrl(@QueryParameter String soundUrl) {
+            getJenkinsInstanceOrDie().checkPermission(SoundsAgentAction.PERMISSION);
+
             ResourceResolver resourceResolver = new ResourceResolver(soundUrl);
 
             try {

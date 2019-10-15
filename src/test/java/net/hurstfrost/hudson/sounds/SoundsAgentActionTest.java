@@ -63,17 +63,6 @@ public class SoundsAgentActionTest {
 		HudsonSoundsNotifier.HudsonSoundsDescriptor.getDescriptor().setPlayMethod(PLAY_METHOD.BROWSER);
 	}
 
-	@Before
-	public void prepareFilterListener(){
-		WebApp webApp = WebApp.get(j.jenkins.servletContext);
-		webApp.setFilteredDoActionTriggerListener((f, req, rsp, node) -> {
-			return false;
-		});
-		webApp.setFilteredGetterTriggerListener((f, req, rsp, node, expression) -> {
-			return false;
-		});
-	}
-
 	@Test
 	public void doTestSoundWhenAuthenticated() {
 		FormValidation formValidation = descriptor.doTestSound("YAWN");
