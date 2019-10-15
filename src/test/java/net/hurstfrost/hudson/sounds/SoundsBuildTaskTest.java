@@ -31,11 +31,10 @@ import static org.mockito.Mockito.*;
 public class SoundsBuildTaskTest {
     @Rule
     public JenkinsRule j = new JenkinsRule();
-    private FreeStyleProject project;
 
     @Before
 	public void before() throws Exception {
-        project = j.createFreeStyleProject("freestyle");
+        j.createFreeStyleProject("freestyle");
 
         JenkinsRule.DummySecurityRealm securityRealm = j.createDummySecurityRealm();
         j.jenkins.setSecurityRealm(securityRealm);
