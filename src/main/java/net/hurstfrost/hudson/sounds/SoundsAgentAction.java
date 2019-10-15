@@ -251,12 +251,11 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
                         final BufferedInputStream stream = new BufferedInputStream(zipInputStream);
                         playSound(stream, afterDelayMs);
                         IOUtils.closeQuietly(stream);
+                        break;
                     }
                 } finally {
                     IOUtils.closeQuietly(zipInputStream);
                 }
-            } catch (UnsupportedAudioFileException e) {
-                throw new UnplayableSoundBiteException(soundBite, e);
             } catch (Exception e) {
                 throw new UnplayableSoundBiteException(soundBite, e);
             }
