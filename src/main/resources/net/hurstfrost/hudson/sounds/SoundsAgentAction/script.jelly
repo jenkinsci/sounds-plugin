@@ -81,9 +81,10 @@
   		var	f = jsonFetcher(
   			function(soundsResponse) {
   				var	played;
+
   				try {
  					if (soundsResponse.v != undefined) {
- 						console.log('rsp:p='+soundsResponse.p+',v='+soundsResponse.v+',play='+(soundsResponse.play!=undefined)+',['+_sounds_AUDIO.length+']');
+// 						console.log('rsp:p='+soundsResponse.p+',v='+soundsResponse.v+',play='+(soundsResponse.play!=undefined)+',['+_sounds_AUDIO.length+']');
  						window.VERSION = soundsResponse.v;
  					}
  					if (soundsResponse.x) {

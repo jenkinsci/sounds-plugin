@@ -19,9 +19,8 @@
                     onFailure();
                 }
             };
-            request.onerror = function() { onFailure(); };
+            request.onerror = onFailure;
             request.send();
-            return request;
   		}
 	}
 
