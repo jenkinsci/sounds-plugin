@@ -1,7 +1,6 @@
 package net.hurstfrost.hudson.sounds;
 
 import hudson.Extension;
-import hudson.model.Hudson;
 import hudson.model.PageDecorator;
 
 @Extension

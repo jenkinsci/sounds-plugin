@@ -1,14 +1,12 @@
 package net.hurstfrost.hudson.sounds;
 
-import java.io.IOException;
-
-import javax.servlet.ServletException;
-
 import net.sf.json.JSONObject;
-
 import org.kohsuke.stapler.HttpResponse;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
+
+import javax.servlet.ServletException;
+import java.io.IOException;
 
 public class JSONHttpResponse implements HttpResponse {
 

@@ -1,52 +1,17 @@
 package net.hurstfrost.hudson.sounds;
 
+import hudson.EnvVars;
 import hudson.Extension;
-import hudson.ExtensionList;
 import hudson.Launcher;
-import hudson.model.AbstractBuild;
-import hudson.model.AbstractProject;
-import hudson.model.BuildListener;
-import hudson.model.Hudson;
-import hudson.model.Result;
+import hudson.model.*;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Notifier;
 import hudson.tasks.Publisher;
 import hudson.util.FormValidation;
-import hudson.EnvVars;
-
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLConnection;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-
-import javax.annotation.Nullable;
-import javax.sound.sampled.AudioFileFormat;
-import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.DataLine;
-import javax.sound.sampled.LineUnavailableException;
-import javax.sound.sampled.SourceDataLine;
-import javax.sound.sampled.UnsupportedAudioFileException;
-import javax.sound.sampled.DataLine.Info;
-
 import hudson.util.VersionNumber;
+import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
-
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
@@ -54,6 +19,21 @@ import org.jfree.util.Log;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
+
+import javax.annotation.Nullable;
+import javax.sound.sampled.*;
+import javax.sound.sampled.DataLine.Info;
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.util.*;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+
+import static net.hurstfrost.hudson.sounds.SoundsAgentAction.PERMISSION;
 
 /**
  * {@link Notifier} that allows Jenkins to play audio clips as build notifications.
@@ -227,7 +207,7 @@ public class HudsonSoundsNotifier extends Notifier {
 		}
 
         public static HudsonSoundsDescriptor getDescriptor() {
-            return JenkinsSoundsUtils.getJenkinsInstanceOrDie().getDescriptorByType(HudsonSoundsDescriptor.class);
+			return Jenkins.get().getDescriptorByType(HudsonSoundsDescriptor.class);
         }
 
         public List<SoundBite> getSounds() {
@@ -430,6 +410,8 @@ public class HudsonSoundsNotifier extends Notifier {
          * @return a FormValidation
          */
 	    public FormValidation doCheckSoundArchive(@QueryParameter final String value) {
+			Jenkins.get().checkPermission(PERMISSION);
+
             ResourceResolver resourceResolver = new ResourceResolver(value);
 
 			if (!resourceResolver.isValid()) {

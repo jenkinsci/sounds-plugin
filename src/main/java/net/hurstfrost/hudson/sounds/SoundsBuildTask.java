@@ -1,5 +1,6 @@
 package net.hurstfrost.hudson.sounds;
 
+import hudson.EnvVars;
 import hudson.Extension;
 import hudson.Launcher;
 import hudson.model.AbstractBuild;
@@ -8,24 +9,20 @@ import hudson.model.BuildListener;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import hudson.util.FormValidation;
-import hudson.EnvVars;
+import jenkins.model.Jenkins;
+import net.hurstfrost.hudson.sounds.HudsonSoundsNotifier.HudsonSoundsDescriptor;
+import net.hurstfrost.hudson.sounds.HudsonSoundsNotifier.HudsonSoundsDescriptor.SoundBite;
+import net.hurstfrost.hudson.sounds.SoundsBuildTask.SoundSource.SourceType;
+import net.sf.json.JSONObject;
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.StaplerRequest;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.List;
-
-import net.hurstfrost.hudson.sounds.HudsonSoundsNotifier.HudsonSoundsDescriptor;
-import net.hurstfrost.hudson.sounds.HudsonSoundsNotifier.HudsonSoundsDescriptor.SoundBite;
-import net.hurstfrost.hudson.sounds.SoundsBuildTask.SoundSource.SourceType;
-import net.sf.json.JSONObject;
-
-import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.QueryParameter;
-import org.kohsuke.stapler.StaplerRequest;
-
-import static net.hurstfrost.hudson.sounds.JenkinsSoundsUtils.getJenkinsInstanceOrDie;
 
 public class SoundsBuildTask extends Builder {
 	private final Integer	afterDelayMs;
@@ -140,6 +137,8 @@ public class SoundsBuildTask extends Builder {
         }
         
         public FormValidation doCheckSoundUrl(@QueryParameter String soundUrl) {
+			Jenkins.get().checkPermission(SoundsAgentAction.PERMISSION);
+
             ResourceResolver resourceResolver = new ResourceResolver(soundUrl);
 
             if (resourceResolver.isEmpty()) {
@@ -186,7 +185,7 @@ public class SoundsBuildTask extends Builder {
 		}
 
 		public FormValidation doTestSound(@QueryParameter String selectedSound) {
-            getJenkinsInstanceOrDie().checkPermission(SoundsAgentAction.PERMISSION);
+            Jenkins.get().checkPermission(SoundsAgentAction.PERMISSION);
 
             try {
                 HudsonSoundsDescriptor.getDescriptor().playSound(selectedSound, null);
@@ -197,7 +196,7 @@ public class SoundsBuildTask extends Builder {
 		}
 		
 		public FormValidation doTestUrl(@QueryParameter String soundUrl) {
-            getJenkinsInstanceOrDie().checkPermission(SoundsAgentAction.PERMISSION);
+            Jenkins.get().checkPermission(SoundsAgentAction.PERMISSION);
 
             ResourceResolver resourceResolver = new ResourceResolver(soundUrl);
 

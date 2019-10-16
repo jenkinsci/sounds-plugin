@@ -1,17 +1,15 @@
 package net.hurstfrost.hudson.sounds;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.URL;
-
-import javax.activation.MimetypesFileTypeMap;
-import javax.servlet.ServletException;
-
 import org.apache.commons.io.IOUtils;
 import org.kohsuke.stapler.HttpResponse;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
+
+import javax.activation.MimetypesFileTypeMap;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URL;
 
 public class UrlProxyHttpResponse implements HttpResponse {
 

@@ -1,25 +1,24 @@
 package net.hurstfrost.hudson.sounds;
 
-import static org.junit.Assert.*;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.TreeMap;
-
-import javax.sound.sampled.UnsupportedAudioFileException;
-
+import com.gargoylesoftware.htmlunit.html.HtmlPage;
+import hudson.model.Result;
+import hudson.security.FullControlOnceLoggedInAuthorizationStrategy;
+import net.hurstfrost.hudson.sounds.HudsonSoundsNotifier.HudsonSoundsDescriptor;
+import net.hurstfrost.hudson.sounds.HudsonSoundsNotifier.HudsonSoundsDescriptor.SoundBite;
+import net.hurstfrost.hudson.sounds.HudsonSoundsNotifier.PLAY_METHOD;
+import net.hurstfrost.hudson.sounds.HudsonSoundsNotifier.SoundEvent;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 
-import net.hurstfrost.hudson.sounds.HudsonSoundsNotifier.HudsonSoundsDescriptor;
-import net.hurstfrost.hudson.sounds.HudsonSoundsNotifier.PLAY_METHOD;
-import net.hurstfrost.hudson.sounds.HudsonSoundsNotifier.SoundEvent;
-import net.hurstfrost.hudson.sounds.HudsonSoundsNotifier.HudsonSoundsDescriptor.SoundBite;
-import hudson.model.FreeStyleProject;
-import hudson.model.Result;
-import jenkins.model.Jenkins;
+import javax.sound.sampled.UnsupportedAudioFileException;
+import java.net.HttpURLConnection;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.TreeMap;
+
+import static org.junit.Assert.*;
 
 public class HudsonSoundsNotifierTest {
 	@Rule
@@ -33,13 +32,17 @@ public class HudsonSoundsNotifierTest {
 
 	@Before
 	public void before() throws Exception {
+		JenkinsRule.DummySecurityRealm securityRealm = j.createDummySecurityRealm();
+		j.jenkins.setSecurityRealm(securityRealm);
+		j.jenkins.setAuthorizationStrategy(new FullControlOnceLoggedInAuthorizationStrategy());
+
 		TEST_ARCHIVE_URL = HudsonSoundsNotifier.class.getResource("/test-sound-archive.zip").toString();
-		descriptor = (HudsonSoundsDescriptor) Jenkins.get().getDescriptor("HudsonSoundsNotifier");
+		descriptor = (HudsonSoundsDescriptor) j.jenkins.getDescriptor("HudsonSoundsNotifier");
 		instance = new HudsonSoundsNotifier();
 		descriptor.setPlayMethod(PLAY_METHOD.LOCAL);
 	}
 
-    @Test
+	@Test
 	public void testRebuildIndex() throws Exception {
 		TreeMap<String, SoundBite> index = HudsonSoundsDescriptor.rebuildSoundsIndex(TEST_ARCHIVE_URL);
 		
@@ -164,5 +167,24 @@ public class HudsonSoundsNotifierTest {
 		assertNull("Should not play on NB->Fa", instance.getSoundEventFor(Result.UNSTABLE, Result.NOT_BUILT));
 		assertNull("Should not play on Ab->Fa", instance.getSoundEventFor(Result.UNSTABLE, Result.ABORTED));
 		assertNull("Should not play on Un->Fa", instance.getSoundEventFor(Result.UNSTABLE, Result.UNSTABLE));
+	}
+
+	@Test
+	public void directHttpDescriptorAccessWithPermission() throws Exception {
+		JenkinsRule.WebClient webClient = j.createWebClient();
+
+		webClient.login("user");
+
+		HtmlPage page;
+
+		page = webClient.goTo("descriptorByName/net.hurstfrost.hudson.sounds.HudsonSoundsNotifier/checkSoundArchive?value=file://nonexistantfile");
+		assertEquals("Resource not found at 'file://nonexistantfile'", page.asText());
+	}
+
+	@Test
+	public void directHttpDescriptorAccessWithoutPermission() throws Exception {
+		JenkinsRule.WebClient webClient = j.createWebClient();
+
+		webClient.assertFails("descriptorByName/net.hurstfrost.hudson.sounds.HudsonSoundsNotifier/checkSoundArchive?value=file://nonexistantfile", HttpURLConnection.HTTP_FORBIDDEN);
 	}
 }

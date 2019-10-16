@@ -5,25 +5,18 @@ import hudson.ExtensionList;
 import hudson.ExtensionPoint;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
-import hudson.model.Hudson;
 import hudson.model.RootAction;
 import hudson.security.Permission;
 import hudson.util.FormValidation;
-
-import java.io.BufferedInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URL;
-import java.net.URLConnection;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
+import jenkins.model.Jenkins;
+import net.hurstfrost.hudson.sounds.HudsonSoundsNotifier.HudsonSoundsDescriptor;
+import net.hurstfrost.hudson.sounds.HudsonSoundsNotifier.HudsonSoundsDescriptor.SoundBite;
+import net.hurstfrost.hudson.sounds.HudsonSoundsNotifier.PLAY_METHOD;
+import net.sf.json.JSONObject;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
+import org.kohsuke.stapler.*;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
@@ -32,23 +25,17 @@ import javax.sound.sampled.AudioFileFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
-
-import net.hurstfrost.hudson.sounds.HudsonSoundsNotifier.HudsonSoundsDescriptor;
-import net.hurstfrost.hudson.sounds.HudsonSoundsNotifier.PLAY_METHOD;
-import net.hurstfrost.hudson.sounds.HudsonSoundsNotifier.HudsonSoundsDescriptor.SoundBite;
-import net.sf.json.JSONObject;
-
-import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
-import org.kohsuke.stapler.HttpResponse;
-import org.kohsuke.stapler.HttpResponses;
-import org.kohsuke.stapler.QueryParameter;
-import org.kohsuke.stapler.Stapler;
-import org.kohsuke.stapler.StaplerRequest;
-import org.kohsuke.stapler.StaplerResponse;
-
-import static net.hurstfrost.hudson.sounds.JenkinsSoundsUtils.getJenkinsInstanceOrDie;
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 /*
  * TODO: Secure Sounds properly
@@ -96,16 +83,16 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
     }
 
     public SoundsAgentActionDescriptor getDescriptor() {
-        return (SoundsAgentActionDescriptor) getJenkinsInstanceOrDie().getDescriptorOrDie(getClass());
+		return (SoundsAgentActionDescriptor) Jenkins.get().getDescriptorOrDie(getClass());
     }
 
     public static ExtensionList<SoundsAgentAction> all() {
-        return getJenkinsInstanceOrDie().getExtensionList(SoundsAgentAction.class);
+		return Jenkins.get().getExtensionList(SoundsAgentAction.class);
     }
 
     public String getRootURL() {
     	// Why doesn't ${rootURL} work in script.jelly?
-    	return getJenkinsInstanceOrDie().getRootUrl();
+		return Jenkins.get().getRootUrl();
     }
 
     @Extension
@@ -121,7 +108,7 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
 		}
 
         public static SoundsAgentActionDescriptor getDescriptor() {
-            return getJenkinsInstanceOrDie().getDescriptorByType(SoundsAgentActionDescriptor.class);
+			return Jenkins.get().getDescriptorByType(SoundsAgentActionDescriptor.class);
         }
 
     	@Override
@@ -211,7 +198,7 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
     	}
         
 		public FormValidation doTestSound(@QueryParameter String selectedSound) {
-			getJenkinsInstanceOrDie().checkPermission(PERMISSION);
+			Jenkins.get().checkPermission(PERMISSION);
 
 			try {
                 HudsonSoundsDescriptor.getDescriptor().playSound(selectedSound, null);
@@ -222,7 +209,7 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
 		}
 		
 		public FormValidation doTestUrl(@QueryParameter String soundUrl) {
-			getJenkinsInstanceOrDie().checkPermission(PERMISSION);
+			Jenkins.get().checkPermission(PERMISSION);
 
 			try {
 				FormValidation response = validateUrl(soundUrl);
@@ -321,7 +308,7 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
     }
     
     public HttpResponse doCancelSounds() {
-        getJenkinsInstanceOrDie().checkPermission(PERMISSION);
+		Jenkins.get().checkPermission(PERMISSION);
 
 		SoundsAgentActionDescriptor descriptor = getDescriptor();
 		
@@ -479,7 +466,7 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
     }
 
     public HttpResponse doGlobalMute(StaplerRequest req, StaplerResponse rsp) {
-        getJenkinsInstanceOrDie().checkPermission(PERMISSION);
+		Jenkins.get().checkPermission(PERMISSION);
     	
     	getDescriptor().setGlobalMute(!getDescriptor().isGlobalMute());
     	getDescriptor().cancelSounds();
