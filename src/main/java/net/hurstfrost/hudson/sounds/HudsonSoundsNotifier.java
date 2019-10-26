@@ -20,6 +20,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.sound.sampled.*;
 import javax.sound.sampled.DataLine.Info;
@@ -233,7 +234,7 @@ public class HudsonSoundsNotifier extends Notifier {
 		}
 		
 		protected static TreeMap<String, SoundBite> rebuildSoundsIndex(String urlString) {
-            final TreeMap<String, SoundBite> index = new TreeMap<String, SoundBite>();
+            final TreeMap<String, SoundBite> index = new TreeMap<>();
 			try {
 				ZipInputStream zipInputStream = new ZipInputStream(new ResourceResolver(urlString).getInputStream());
 				try {
@@ -246,7 +247,6 @@ public class HudsonSoundsNotifier extends Notifier {
 								f = AudioSystem.getAudioFileFormat(new BufferedInputStream(zipInputStream));
 							} catch (UnsupportedAudioFileException e) {
 								// Oh well
-                                System.out.println(e);
                             }
 							index.put(id, new SoundBite(id, entry.getName(), urlString, f));
 						}
@@ -254,7 +254,7 @@ public class HudsonSoundsNotifier extends Notifier {
 				} finally {
 					IOUtils.closeQuietly(zipInputStream);
 				}
-			} catch (Exception e) {
+			} catch (IOException | URISyntaxException e) {
 				// Can't find archive (this would have already been notified by doCheckSoundArchive() )
 			}
 			
@@ -338,7 +338,8 @@ public class HudsonSoundsNotifier extends Notifier {
                     if (method == PLAY_METHOD.PIPE) {
                         JSONObject pipeConfig = playMethod;
 
-                        if (Hudson.getVersion().isOlderThan(STAPLER_JSON_BREAKING_CHANGE_VERSION_NUMBER)) {
+						VersionNumber version = Hudson.getVersion();
+						if (version != null && version.isOlderThan(STAPLER_JSON_BREAKING_CHANGE_VERSION_NUMBER)) {
                             pipeConfig = json;
                         }
 
@@ -359,9 +360,13 @@ public class HudsonSoundsNotifier extends Notifier {
 		}
 
 		@Override
-		public HudsonSoundsNotifier newInstance(StaplerRequest req, JSONObject formData) {
+		public HudsonSoundsNotifier newInstance(@Nullable StaplerRequest req, @Nonnull JSONObject formData) {
 			HudsonSoundsNotifier m = new HudsonSoundsNotifier();
-	        m.setSoundEvents(req.bindJSONToList(SoundEvent.class, formData.get("soundEvents")));
+
+			if (req != null) {
+				m.setSoundEvents(req.bindJSONToList(SoundEvent.class, formData.get("soundEvents")));
+			}
+
 			return m;
 		}
 
