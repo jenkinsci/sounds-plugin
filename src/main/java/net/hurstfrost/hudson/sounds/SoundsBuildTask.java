@@ -213,24 +213,6 @@ public class SoundsBuildTask extends Builder {
 			}
 		}
 		
-		@Override
-		public boolean configure(final StaplerRequest req, JSONObject json) {
-//			setSoundArchive(json.optString("soundArchive"));
-//			JSONObject	playMethod = json.optJSONObject("playMethod");
-//			if (playMethod != null) {
-//				try {
-//					PLAY_METHOD method = PLAY_METHOD.valueOf(playMethod.getString("value"));
-//					setPlayMethod(method);
-//				} catch (Exception e) {
-//					Log.debug("Exception setting play method", e);
-//				}
-//			}
-//			setSystemCommand(json.optString("systemCommand"));
-//			setPipeTimeoutSecs(json.optInt("pipeTimeoutSecs"));
-			save();
-			return true;
-		}
-
         @Override
         public String getHelpFile() {
             return "/plugin/sounds/help-soundsTask.html";

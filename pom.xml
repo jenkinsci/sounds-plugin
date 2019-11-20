@@ -38,16 +38,9 @@
 		</plugins>
 	</build>
 
-	<distributionManagement>
-		<repository>
-			<id>maven.jenkins-ci.org</id>
-			<url>http://maven.jenkins-ci.org:8081/content/repositories/releases/</url>
-		</repository>
-	</distributionManagement>
-
 	<scm>
-		<connection>scm:git:ssh://github.com/jenkinsci/sounds-plugin.git</connection>
-		<developerConnection>scm:git:ssh://git@github.com/jenkinsci/sounds-plugin.git</developerConnection>
+		<connection>scm:git:https://github.com/jenkinsci/sounds-plugin</connection>
+		<developerConnection>scm:git:https://github.com/jenkinsci/sounds-plugin</developerConnection>
 		<url>https://github.com/jenkinsci/sounds-plugin</url>
 		<tag>HEAD</tag>
 	</scm>

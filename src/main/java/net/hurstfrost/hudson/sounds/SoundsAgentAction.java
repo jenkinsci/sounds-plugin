@@ -39,17 +39,13 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 /*
- * TODO: Secure Sounds properly
  * TODO: JS sounds agent polling rate should be dictated by this class (slow down when disabled by config).
  * TODO: Implement long-poll (configured by plugin config)
  * TODO: Have a way to filter sounds by category (Hudson view?)
  * TODO: Configure poll interval on global config
  * TODO: Adaptive polling (if many clients, slow them down)
  * TODO: Use more efficient audio format (transcode audio according to browser capability)
- * TODO: Provide JSONP to allow sounds to be played on 3rd party page
- * TODO: Add a Hudson build task to play a sound (not just a Notifier)
  * TODO: Convert Speaks! to use Sounds
- * TODO: Safety controls (a way to flush sound queue, and send 'stop playing' to browsers
  * TODO: Make global config allow more than one sound play option.
  */
 
