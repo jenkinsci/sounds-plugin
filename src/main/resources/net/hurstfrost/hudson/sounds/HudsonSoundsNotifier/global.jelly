@@ -4,7 +4,7 @@
 	xmlns:f="/lib/form">
 	<f:section title="Jenkins Sounds">
 		<f:entry title="${%Sound archive location}" field="soundArchive" help="/plugin/sounds/help-globalConfig-archive.html">
-		     <f:textbox />
+		     <f:textbox checkMethod="post" />
 		</f:entry>
 		<f:radioBlock name="playMethod" value="BROWSER" title="Play through HTML5 Audio enabled browser." checked="${descriptor.playMethod=='BROWSER'}" help="/plugin/sounds/help-globalConfig-browser.html">
 		</f:radioBlock>

@@ -17,6 +17,7 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.*;
+import org.kohsuke.stapler.interceptor.RequirePOST;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
@@ -196,7 +197,8 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
 
 			return FormValidation.ok();
     	}
-        
+
+    	@RequirePOST
 		public FormValidation doTestSound(@QueryParameter String selectedSound) {
 			Jenkins.get().checkPermission(PERMISSION);
 
@@ -207,7 +209,8 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
 				return FormValidation.error(String.format("Sound failed : " + e));
 			}
 		}
-		
+
+        @RequirePOST
 		public FormValidation doTestUrl(@QueryParameter String soundUrl) {
 			Jenkins.get().checkPermission(PERMISSION);
 

@@ -19,6 +19,7 @@ import org.jfree.util.Log;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.interceptor.RequirePOST;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -370,7 +371,10 @@ public class HudsonSoundsNotifier extends Notifier {
 			return m;
 		}
 
+		@RequirePOST
 		public FormValidation doTestSound(@QueryParameter String selectedSound, @QueryParameter String soundArchive, @QueryParameter String playMethod, @QueryParameter String systemCommand, @QueryParameter int pipeTimeoutSecs) {
+			Jenkins.get().checkPermission(SoundsAgentAction.PERMISSION);
+
 			if (StringUtils.isEmpty(selectedSound)) {
 				return FormValidation.error("Please choose a sound to test.");
 			}
@@ -414,6 +418,7 @@ public class HudsonSoundsNotifier extends Notifier {
          * @param value the value parameter from the request
          * @return a FormValidation
          */
+        @RequirePOST
 	    public FormValidation doCheckSoundArchive(@QueryParameter final String value) {
 			Jenkins.get().checkPermission(PERMISSION);
 

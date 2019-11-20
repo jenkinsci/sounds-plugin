@@ -20,7 +20,7 @@ import java.util.TreeMap;
 
 import static org.junit.Assert.*;
 
-public class HudsonSoundsNotifierTest {
+public class HudsonSoundsNotifierTest extends TestWithTools {
 	@Rule
 	public JenkinsRule j = new JenkinsRule();
 
@@ -177,14 +177,25 @@ public class HudsonSoundsNotifierTest {
 
 		HtmlPage page;
 
-		page = webClient.goTo("descriptorByName/net.hurstfrost.hudson.sounds.HudsonSoundsNotifier/checkSoundArchive?value=file://nonexistantfile");
+		page = whyDoesntJenkinsRuleWebClientLetMeDoPostForPage(webClient, "descriptorByName/net.hurstfrost.hudson.sounds.HudsonSoundsNotifier/checkSoundArchive?value=file://nonexistantfile");
 		assertEquals("Resource not found at 'file://nonexistantfile'", page.asText());
 	}
 
 	@Test
 	public void directHttpDescriptorAccessWithoutPermission() throws Exception {
 		JenkinsRule.WebClient webClient = j.createWebClient();
+		HtmlPage page;
 
-		webClient.assertFails("descriptorByName/net.hurstfrost.hudson.sounds.HudsonSoundsNotifier/checkSoundArchive?value=file://nonexistantfile", HttpURLConnection.HTTP_FORBIDDEN);
+		page = whyDoesntJenkinsRuleWebClientLetMeDoPostForPage(webClient, "descriptorByName/net.hurstfrost.hudson.sounds.HudsonSoundsNotifier/checkSoundArchive?value=file://nonexistantfile");
+		assertEquals(page.getWebResponse().getStatusCode(), HttpURLConnection.HTTP_FORBIDDEN);
+	}
+
+	@Test
+	public void directHttpDescriptorAccessWithGetDisallowed() throws Exception {
+		JenkinsRule.WebClient webClient = j.createWebClient();
+
+		webClient.login("configure");
+
+		webClient.assertFails("descriptorByName/net.hurstfrost.hudson.sounds.HudsonSoundsNotifier/checkSoundArchive?value=file://nonexistantfile", HttpURLConnection.HTTP_BAD_METHOD);
 	}
 }

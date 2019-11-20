@@ -14,7 +14,7 @@
 	</f:radioBlock>
 	<f:radioBlock name="soundSource" value="URL" title="from a URL" checked="${instance.sourceType=='URL'}" help="/plugin/sounds/help-soundsTask-url.html">
 		<f:entry title="URL" field="soundUrl">
-		     <f:textbox />
+		     <f:textbox checkMethod="post" />
 		</f:entry>
   		<f:validateButton method="testUrl" title="Test" with="soundUrl"/>
 	</f:radioBlock>

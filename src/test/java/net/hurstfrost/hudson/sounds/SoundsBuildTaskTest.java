@@ -11,7 +11,7 @@ import java.net.HttpURLConnection;
 
 import static org.junit.Assert.assertEquals;
 
-public class SoundsBuildTaskTest {
+public class SoundsBuildTaskTest extends TestWithTools {
     @Rule
     public JenkinsRule j = new JenkinsRule();
 
@@ -27,30 +27,44 @@ public class SoundsBuildTaskTest {
     @Test
     public void directHttpDescriptorAccessWithPermission() throws Exception {
         JenkinsRule.WebClient webClient = j.createWebClient();
+        HtmlPage page;
 
         webClient.login("user");
 
-        HtmlPage page;
-
-        page = webClient.goTo("job/freestyle/descriptorByName/net.hurstfrost.hudson.sounds.SoundsBuildTask/testUrl?soundUrl=http://localhost:8080/");
+        page = whyDoesntJenkinsRuleWebClientLetMeDoPostForPage(webClient, "job/freestyle/descriptorByName/net.hurstfrost.hudson.sounds.SoundsBuildTask/testUrl?soundUrl=http://localhost:8080/");
         assertEquals("Sound played successfully", page.asText());
 
-        page = webClient.goTo("job/freestyle/descriptorByName/net.hurstfrost.hudson.sounds.SoundsBuildTask/testSound?selectedSound=NO_SUCH_SOUND");
+        page = whyDoesntJenkinsRuleWebClientLetMeDoPostForPage(webClient, "job/freestyle/descriptorByName/net.hurstfrost.hudson.sounds.SoundsBuildTask/testSound?selectedSound=NO_SUCH_SOUND");
         assertEquals("Sound failed : net.hurstfrost.hudson.sounds.UnplayableSoundBiteException : No such sound.", page.asText());
 
-        page = webClient.goTo("job/freestyle/descriptorByName/net.hurstfrost.hudson.sounds.SoundsBuildTask/checkSoundUrl?soundUrl=file://nonexistantfile");
+        page = whyDoesntJenkinsRuleWebClientLetMeDoPostForPage(webClient, "job/freestyle/descriptorByName/net.hurstfrost.hudson.sounds.SoundsBuildTask/checkSoundUrl?soundUrl=file://nonexistantfile");
         assertEquals("Resource not found or not readable", page.asText());
-
-        page = webClient.goTo("job/freestyle/descriptorByName/net.hurstfrost.hudson.sounds.SoundsBuildTask/checkSoundUrl?soundUrl=http://localhost:8080/");
-        assertEquals("", page.asText());
     }
 
     @Test
     public void directHttpDescriptorAccessWithoutPermission() throws Exception {
         JenkinsRule.WebClient webClient = j.createWebClient();
+        HtmlPage page;
 
-        webClient.assertFails("job/freestyle/descriptorByName/net.hurstfrost.hudson.sounds.SoundsBuildTask/testUrl?soundUrl=http://localhost:8080/", HttpURLConnection.HTTP_FORBIDDEN);
-        webClient.assertFails("job/freestyle/descriptorByName/net.hurstfrost.hudson.sounds.SoundsBuildTask/testSound?selectedSound=EXPLODE", HttpURLConnection.HTTP_FORBIDDEN);
-        webClient.assertFails("job/freestyle/descriptorByName/net.hurstfrost.hudson.sounds.SoundsBuildTask/checkSoundUrl?soundUrl=file://nonexistantfile", HttpURLConnection.HTTP_FORBIDDEN);
+        page = whyDoesntJenkinsRuleWebClientLetMeDoPostForPage(webClient, "job/freestyle/descriptorByName/net.hurstfrost.hudson.sounds.SoundsBuildTask/testUrl?soundUrl=http://localhost:8080/");
+        assertEquals(page.getWebResponse().getStatusCode(), HttpURLConnection.HTTP_FORBIDDEN);
+
+        page = whyDoesntJenkinsRuleWebClientLetMeDoPostForPage(webClient, "job/freestyle/descriptorByName/net.hurstfrost.hudson.sounds.SoundsBuildTask/testSound?selectedSound=EXPLODE");
+        assertEquals(page.getWebResponse().getStatusCode(), HttpURLConnection.HTTP_FORBIDDEN);
+
+        page = whyDoesntJenkinsRuleWebClientLetMeDoPostForPage(webClient, "job/freestyle/descriptorByName/net.hurstfrost.hudson.sounds.SoundsBuildTask/checkSoundUrl?soundUrl=file://nonexistantfile");
+        assertEquals(page.getWebResponse().getStatusCode(), HttpURLConnection.HTTP_FORBIDDEN);
+    }
+
+    @Test
+    public void directHttpDescriptorAccessWithGetDisallowed() throws Exception {
+        JenkinsRule.WebClient webClient = j.createWebClient();
+
+        webClient.login("user");
+
+        webClient.assertFails("descriptorByName/net.hurstfrost.hudson.sounds.SoundsBuildTask/testUrl?soundUrl=http://localhost:8080/", HttpURLConnection.HTTP_BAD_METHOD);
+        webClient.assertFails("descriptorByName/net.hurstfrost.hudson.sounds.SoundsBuildTask/testSound?selectedSound=EXPLODE", HttpURLConnection.HTTP_BAD_METHOD);
+
+        webClient.assertFails("descriptorByName/net.hurstfrost.hudson.sounds.SoundsBuildTask/checkSoundUrl?soundUrl=file://nonexistantfile", HttpURLConnection.HTTP_BAD_METHOD);
     }
 }

@@ -26,7 +26,7 @@ import java.net.HttpURLConnection;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
-public class SoundsAgentActionTest {
+public class SoundsAgentActionTest extends TestWithTools {
     @Rule
     public JenkinsRule j = new JenkinsRule();
 
@@ -98,21 +98,35 @@ public class SoundsAgentActionTest {
 
         webClient.login("configure");
 
-        HtmlPage page = webClient.goTo("descriptorByName/net.hurstfrost.hudson.sounds.SoundsAgentAction/testUrl?soundUrl=http://localhost:8080/");
+        HtmlPage page = whyDoesntJenkinsRuleWebClientLetMeDoPostForPage(webClient,"descriptorByName/net.hurstfrost.hudson.sounds.SoundsAgentAction/testUrl?soundUrl=http://localhost:8080/");
         assertEquals("Sound played successfully", page.asText());
 
-        page = webClient.goTo("descriptorByName/net.hurstfrost.hudson.sounds.SoundsAgentAction/testSound?selectedSound=NO_SUCH_SOUND");
+        page = whyDoesntJenkinsRuleWebClientLetMeDoPostForPage(webClient, "descriptorByName/net.hurstfrost.hudson.sounds.SoundsAgentAction/testSound?selectedSound=NO_SUCH_SOUND");
         assertEquals("Sound failed : net.hurstfrost.hudson.sounds.UnplayableSoundBiteException : No such sound.", page.asText());
     }
 
     @Test
     public void directHttpDescriptorAccessWithoutPermission() throws Exception {
         JenkinsRule.WebClient webClient = j.createWebClient();
+        HtmlPage page;
 
         webClient.login("noconfigure");
 
-        webClient.assertFails("descriptorByName/net.hurstfrost.hudson.sounds.SoundsAgentAction/testUrl?soundUrl=http://localhost:8080/", HttpURLConnection.HTTP_FORBIDDEN);
-        webClient.assertFails("descriptorByName/net.hurstfrost.hudson.sounds.SoundsAgentAction/testSound?selectedSound=EXPLODE", HttpURLConnection.HTTP_FORBIDDEN);
+        page = whyDoesntJenkinsRuleWebClientLetMeDoPostForPage(webClient, "descriptorByName/net.hurstfrost.hudson.sounds.SoundsAgentAction/testUrl?soundUrl=http://localhost:8080/");
+        assertEquals(page.getWebResponse().getStatusCode(), HttpURLConnection.HTTP_FORBIDDEN);
+
+        page = whyDoesntJenkinsRuleWebClientLetMeDoPostForPage(webClient, "descriptorByName/net.hurstfrost.hudson.sounds.SoundsAgentAction/testSound?selectedSound=EXPLODE");
+        assertEquals(page.getWebResponse().getStatusCode(), HttpURLConnection.HTTP_FORBIDDEN);
+    }
+
+    @Test
+    public void directHttpDescriptorAccessWithGetDisallowed() throws Exception {
+        JenkinsRule.WebClient webClient = j.createWebClient();
+
+        webClient.login("configure");
+
+        webClient.assertFails("descriptorByName/net.hurstfrost.hudson.sounds.SoundsAgentAction/testUrl?soundUrl=http://localhost:8080/", HttpURLConnection.HTTP_BAD_METHOD);
+        webClient.assertFails("descriptorByName/net.hurstfrost.hudson.sounds.SoundsAgentAction/testSound?selectedSound=EXPLODE", HttpURLConnection.HTTP_BAD_METHOD);
     }
 
     @Test
@@ -359,7 +373,7 @@ Unable to make this test work:
         assertEquals(12, descriptor.version);
     }
 
-	/*
+    /*
 	@Test
 	public void testAudioFormats() throws Exception {
 		String[]	urls = new String[] {

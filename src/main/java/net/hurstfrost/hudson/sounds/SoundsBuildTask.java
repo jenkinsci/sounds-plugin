@@ -17,6 +17,7 @@ import net.sf.json.JSONObject;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.interceptor.RequirePOST;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -135,7 +136,8 @@ public class SoundsBuildTask extends Builder {
         public boolean isApplicable(Class<? extends AbstractProject> jobType) {
             return true;
         }
-        
+
+        @RequirePOST
         public FormValidation doCheckSoundUrl(@QueryParameter String soundUrl) {
 			Jenkins.get().checkPermission(SoundsAgentAction.PERMISSION);
 
@@ -184,6 +186,7 @@ public class SoundsBuildTask extends Builder {
         	return hudsonSoundsDescriptor.getSounds();
 		}
 
+		@RequirePOST
 		public FormValidation doTestSound(@QueryParameter String selectedSound) {
             Jenkins.get().checkPermission(SoundsAgentAction.PERMISSION);
 
@@ -194,7 +197,8 @@ public class SoundsBuildTask extends Builder {
 				return FormValidation.error(String.format("Sound failed : " + e));
 			}
 		}
-		
+
+		@RequirePOST
 		public FormValidation doTestUrl(@QueryParameter String soundUrl) {
             Jenkins.get().checkPermission(SoundsAgentAction.PERMISSION);
 
