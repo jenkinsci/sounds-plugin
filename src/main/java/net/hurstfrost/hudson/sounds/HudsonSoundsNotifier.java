@@ -35,8 +35,6 @@ import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import static net.hurstfrost.hudson.sounds.SoundsAgentAction.PERMISSION;
-
 /**
  * {@link Notifier} that allows Jenkins to play audio clips as build notifications.
  * 
@@ -420,7 +418,7 @@ public class HudsonSoundsNotifier extends Notifier {
          */
         @RequirePOST
 	    public FormValidation doCheckSoundArchive(@QueryParameter final String value) {
-			Jenkins.get().checkPermission(PERMISSION);
+			Jenkins.get().checkPermission(SoundsAgentAction.PERMISSION);
 
             ResourceResolver resourceResolver = new ResourceResolver(value);
 
