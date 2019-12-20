@@ -60,6 +60,8 @@ public class SoundsAgentActionTest extends TestWithTools {
     @Test
     public void doTestSoundWhenAuthenticated() {
         FormValidation formValidation = descriptor.doTestSound("YAWN");
+
+        assertEquals("Sound played successfully", formValidation.renderHtml());
     }
 
     @Test
@@ -68,7 +70,8 @@ public class SoundsAgentActionTest extends TestWithTools {
             FormValidation formValidation = descriptor.doTestSound("YAWN");
 
             fail("Should have been denied.");
-        } catch (Exception e) {
+        } catch (AccessDeniedException2 e) {
+            assertEquals(AccessDeniedException2.class, e.getClass());
         }
     }
 
@@ -78,7 +81,8 @@ public class SoundsAgentActionTest extends TestWithTools {
             FormValidation formValidation = descriptor.doTestUrl("http://localhost:8080/");
 
             fail("Should have been denied.");
-        } catch (Exception e) {
+        } catch (AccessDeniedException2 e) {
+            assertEquals(AccessDeniedException2.class, e.getClass());
         }
     }
 
@@ -89,6 +93,7 @@ public class SoundsAgentActionTest extends TestWithTools {
 
             fail("Should have been denied.");
         } catch (AccessDeniedException2 e) {
+            assertEquals(AccessDeniedException2.class, e.getClass());
         }
     }
 
