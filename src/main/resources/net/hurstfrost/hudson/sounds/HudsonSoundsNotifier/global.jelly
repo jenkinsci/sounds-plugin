@@ -20,7 +20,7 @@
 		</f:radioBlock>
 		<f:advanced>
 			<f:entry title="Test sound" field="sound">
-				<div class="warning">You must save any changes above before trying to test sounds.</div>
+				<div class="warning">You must apply/save any changes above before trying to test sounds.</div>
 				<input type="hidden" name="_.selectedSound" />
 				<select class="setting-input" name="_.sound" onchange="findPrevious(this, function(){return true}).value = this.value">
 					<option value="">(choose a sound)</option>
@@ -29,7 +29,7 @@
 					</j:forEach>
 				</select>
 			</f:entry>
-    		<f:validateButton method="testSound" title="${%Test sound}" with="selectedSound,soundArchive,playMethod,systemCommand,pipeTimeoutSecs"/>
+    		<f:validateButton method="testSound" title="${%Test sound}" with="selectedSound"/>
 		</f:advanced>
 	</f:section>
 </j:jelly>
