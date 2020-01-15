@@ -4,6 +4,7 @@ import hudson.EnvVars;
 import hudson.Extension;
 import hudson.Launcher;
 import hudson.model.*;
+import hudson.security.Permission;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Notifier;
@@ -309,6 +310,10 @@ public class HudsonSoundsNotifier extends Notifier {
 		}
 
 		public void setSystemCommand(String systemCommand) {
+			if (!Objects.equals(this.systemCommand, systemCommand)) {
+				Jenkins.get().checkPermission(Jenkins.ADMINISTER);
+			}
+
 			this.systemCommand = systemCommand;
 		}
 
@@ -369,18 +374,17 @@ public class HudsonSoundsNotifier extends Notifier {
 			return m;
 		}
 
+		// This method can't work as intended (fully testing the configuration form) due to bug in hudson-behaviour.js:findFormItem around radio buttons.
+		// The bug means that the f:validateButton will send the value of the last radio field with that name (regardless of whether it's checked) rather than the checked one.
+		// The work-around is to inform the user they must save their changes before testing.
 		@RequirePOST
-		public FormValidation doTestSound(@QueryParameter String selectedSound, @QueryParameter String soundArchive, @QueryParameter String playMethod, @QueryParameter String systemCommand, @QueryParameter int pipeTimeoutSecs) {
+		public FormValidation doTestSound(@QueryParameter String selectedSound) {
 			Jenkins.get().checkPermission(SoundsAgentAction.PERMISSION);
 
 			if (StringUtils.isEmpty(selectedSound)) {
 				return FormValidation.error("Please choose a sound to test.");
 			}
 			
-			setSoundArchive(soundArchive);
-			setPipeTimeoutSecs(pipeTimeoutSecs);
-			setSystemCommand(systemCommand);
-
 			try {
 				playSound(selectedSound);
 			} catch (UnplayableSoundBiteException e) {
@@ -401,12 +405,16 @@ public class HudsonSoundsNotifier extends Notifier {
 	    	
 			return FormValidation.ok();
 	    }
-	    
+
 	    public FormValidation doCheckSystemCommand(@QueryParameter final String systemCommand) {
 	    	if (StringUtils.isEmpty(systemCommand)) {
 	    		return FormValidation.warning(String.format("Enter a system command to pipe the sound file to"));
 	    	}
-	    	
+
+			if (!Jenkins.get().hasPermission(Jenkins.ADMINISTER)) {
+				return FormValidation.warning(String.format("You do not have sufficient privilege to modify the system command."));
+			}
+
 			return FormValidation.ok();
 	    }
 
@@ -500,27 +508,21 @@ public class HudsonSoundsNotifier extends Notifier {
 	    protected void playSound(String id, EnvVars vars) throws UnplayableSoundBiteException {
 	    	playSound(id, null, vars);
 	    }
-	    
+
 	    protected void playSound(String id, Integer afterDelayMs, EnvVars vars) throws UnplayableSoundBiteException {
 	    	SoundBite soundBite = getSound(id);
 
 	    	if (soundBite != null) {
-	    		switch (playMethod) {
-		    		case BROWSER:
-                        SoundsAgentAction.SoundsAgentActionDescriptor.getDescriptor().playSound(soundBite, afterDelayMs);
-                        return;
-		    		default:
-			    		try {
-                            InputStream soundBiteInputStream = getSoundBiteInputStream(soundBite);
-			    			
-							if (soundBiteInputStream != null) {
-								playSoundFromInputStream(soundBiteInputStream, vars);
-								return;
-							}
-			    		} catch (Exception e) {
-			    			throw new UnplayableSoundBiteException(soundBite, e);
-			    		}
-	    		}
+				try {
+					InputStream soundBiteInputStream = getSoundBiteInputStream(soundBite);
+
+					if (soundBiteInputStream != null) {
+						playSoundFromInputStream(soundBiteInputStream, vars);
+						return;
+					}
+				} catch (Exception e) {
+					throw new UnplayableSoundBiteException(soundBite, e);
+				}
 	    	}
 	    	
 			throw new UnplayableSoundBiteException("No such sound.");
@@ -656,7 +658,7 @@ public class HudsonSoundsNotifier extends Notifier {
 	    	}
 	    }
 
-		protected void playSoundBite(AudioInputStream in) throws LineUnavailableException, IOException {
+		private void playSoundBite(AudioInputStream in) throws LineUnavailableException, IOException {
 			final AudioFormat baseFormat = in.getFormat();
 			AudioFormat  decodedFormat = baseFormat;	//new AudioFormat(
 //	                AudioFormat.Encoding.PCM_SIGNED,

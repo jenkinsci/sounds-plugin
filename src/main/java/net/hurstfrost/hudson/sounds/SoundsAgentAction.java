@@ -14,7 +14,6 @@ import net.hurstfrost.hudson.sounds.HudsonSoundsNotifier.HudsonSoundsDescriptor.
 import net.hurstfrost.hudson.sounds.HudsonSoundsNotifier.PLAY_METHOD;
 import net.sf.json.JSONObject;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.*;
 import org.kohsuke.stapler.interceptor.RequirePOST;
@@ -26,7 +25,6 @@ import javax.sound.sampled.AudioFileFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
-import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,8 +33,6 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 /*
  * TODO: JS sounds agent polling rate should be dictated by this class (slow down when disabled by config).
@@ -175,7 +171,7 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
 			globalMute = mute;
 			save();
 		}
-		
+
         public FormValidation validateUrl(String soundUrl) {
         	if (StringUtils.isEmpty(soundUrl)) {
         		return FormValidation.warning("Missing URL");
@@ -224,29 +220,6 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
 			}
 		}
 
-        public void playSound(SoundBite soundBite, Integer afterDelayMs) throws UnplayableSoundBiteException {
-            try {
-                ZipInputStream zipInputStream = new ZipInputStream(new ResourceResolver(soundBite.url).getInputStream());
-                try {
-                    ZipEntry entry;
-                    while ((entry = zipInputStream.getNextEntry()) != null) {
-                        if (!entry.getName().equals(soundBite.entryName)) {
-                            continue;
-                        }
-
-                        final BufferedInputStream stream = new BufferedInputStream(zipInputStream);
-                        playSound(stream, afterDelayMs);
-                        IOUtils.closeQuietly(stream);
-                        break;
-                    }
-                } finally {
-                    IOUtils.closeQuietly(zipInputStream);
-                }
-            } catch (Exception e) {
-                throw new UnplayableSoundBiteException(soundBite, e);
-            }
-        }
-
         protected void playSound(InputStream stream, Integer afterDelayMs) throws UnsupportedAudioFileException, IOException {
             AudioInputStream source = HudsonSoundsDescriptor.asAudioInputStream(stream);
 
@@ -260,8 +233,11 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
             addSound(url, afterDelayMs);
         }
     }
-    
+
+	@RequirePOST
     public HttpResponse doPlaySound(@QueryParameter String src, @QueryParameter Integer delay) {
+		Jenkins.get().checkPermission(PERMISSION);
+
     	if (StringUtils.isEmpty(src)) {
         	return FormValidation.error("Missing src parameter");
     	}
@@ -305,7 +281,8 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
 			return FormValidation.error(e, "Unplayable sound (" + e + ")");
 		}
     }
-    
+
+	@RequirePOST
     public HttpResponse doCancelSounds() {
 		Jenkins.get().checkPermission(PERMISSION);
 
@@ -464,6 +441,7 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
 		return false;
     }
 
+	@RequirePOST
     public HttpResponse doGlobalMute(StaplerRequest req, StaplerResponse rsp) {
 		Jenkins.get().checkPermission(PERMISSION);
     	
@@ -473,6 +451,10 @@ public class SoundsAgentAction implements RootAction, Describable<SoundsAgentAct
     	return HttpResponses.forwardToPreviousPage();
     }
     
+    public PLAY_METHOD getPlayMethod() {
+		return HudsonSoundsDescriptor.getDescriptor().getPlayMethod();
+    }
+
     public boolean isGlobalMute() {
 		return getDescriptor().isGlobalMute();
     }

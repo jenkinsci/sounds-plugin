@@ -2,7 +2,8 @@ package net.hurstfrost.hudson.sounds;
 
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import hudson.model.Result;
-import hudson.security.FullControlOnceLoggedInAuthorizationStrategy;
+import hudson.security.Permission;
+import jenkins.model.Jenkins;
 import net.hurstfrost.hudson.sounds.HudsonSoundsNotifier.HudsonSoundsDescriptor;
 import net.hurstfrost.hudson.sounds.HudsonSoundsNotifier.HudsonSoundsDescriptor.SoundBite;
 import net.hurstfrost.hudson.sounds.HudsonSoundsNotifier.PLAY_METHOD;
@@ -11,6 +12,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.MockAuthorizationStrategy;
 
 import javax.sound.sampled.UnsupportedAudioFileException;
 import java.net.HttpURLConnection;
@@ -34,7 +36,11 @@ public class HudsonSoundsNotifierTest extends TestWithTools {
 	public void before() throws Exception {
 		JenkinsRule.DummySecurityRealm securityRealm = j.createDummySecurityRealm();
 		j.jenkins.setSecurityRealm(securityRealm);
-		j.jenkins.setAuthorizationStrategy(new FullControlOnceLoggedInAuthorizationStrategy());
+		j.jenkins.setAuthorizationStrategy(new MockAuthorizationStrategy()
+				.grant(Jenkins.ADMINISTER).everywhere().to("admin")
+				.grant(Jenkins.READ, Permission.CONFIGURE, Jenkins.RUN_SCRIPTS).everywhere().to("runscripts")
+				.grant(Jenkins.READ, Permission.CONFIGURE).everywhere().to("user")
+		);
 
 		TEST_ARCHIVE_URL = HudsonSoundsNotifier.class.getResource("/test-sound-archive.zip").toString();
 		descriptor = (HudsonSoundsDescriptor) j.jenkins.getDescriptor("HudsonSoundsNotifier");
@@ -170,7 +176,7 @@ public class HudsonSoundsNotifierTest extends TestWithTools {
 	}
 
 	@Test
-	public void directHttpDescriptorAccessWithPermission() throws Exception {
+	public void directHttpDescriptorAccessToCheckSoundArchiveWithPermission() throws Exception {
 		JenkinsRule.WebClient webClient = j.createWebClient();
 
 		webClient.login("user");
@@ -182,7 +188,7 @@ public class HudsonSoundsNotifierTest extends TestWithTools {
 	}
 
 	@Test
-	public void directHttpDescriptorAccessWithoutPermission() throws Exception {
+	public void directHttpDescriptorAccessToCheckSoundArchiveWithoutPermission() throws Exception {
 		JenkinsRule.WebClient webClient = j.createWebClient();
 		HtmlPage page;
 
@@ -191,11 +197,32 @@ public class HudsonSoundsNotifierTest extends TestWithTools {
 	}
 
 	@Test
-	public void directHttpDescriptorAccessWithGetDisallowed() throws Exception {
+	public void directHttpDescriptorAccessToCheckSoundArchiveWithGetDisallowed() throws Exception {
 		JenkinsRule.WebClient webClient = j.createWebClient();
 
-		webClient.login("configure");
+		webClient.login("user");
 
 		webClient.assertFails("descriptorByName/net.hurstfrost.hudson.sounds.HudsonSoundsNotifier/checkSoundArchive?value=file://nonexistantfile", HttpURLConnection.HTTP_BAD_METHOD);
+	}
+
+	@Test
+	public void directHttpDescriptorAccessToCheckSystemCommandWithAdminister() throws Exception {
+		JenkinsRule.WebClient webClient = j.createWebClient();
+
+		webClient.login("admin");
+
+		HtmlPage page = webClient.goTo("descriptorByName/net.hurstfrost.hudson.sounds.HudsonSoundsNotifier/checkSystemCommand?systemCommand=ls");
+		assertEquals("", page.asText());
+	}
+
+	@Test
+	public void directHttpDescriptorAccessToCheckSystemCommandWithoutAdminister() throws Exception {
+		JenkinsRule.WebClient webClient = j.createWebClient();
+		HtmlPage page;
+
+		webClient.login("runscripts");
+
+		page = webClient.goTo("descriptorByName/net.hurstfrost.hudson.sounds.HudsonSoundsNotifier/checkSystemCommand?systemCommand=ls");
+		assertEquals("You do not have sufficient privilege to modify the system command.", page.asText());
 	}
 }

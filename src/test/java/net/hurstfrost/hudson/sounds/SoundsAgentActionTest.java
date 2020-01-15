@@ -108,6 +108,9 @@ public class SoundsAgentActionTest extends TestWithTools {
 
         page = whyDoesntJenkinsRuleWebClientLetMeDoPostForPage(webClient, "descriptorByName/net.hurstfrost.hudson.sounds.SoundsAgentAction/testSound?selectedSound=NO_SUCH_SOUND");
         assertEquals("Sound failed : net.hurstfrost.hudson.sounds.UnplayableSoundBiteException : No such sound.", page.asText());
+
+        page = whyDoesntJenkinsRuleWebClientLetMeDoPostForPage(webClient, "sounds/playSound?src=http://url");
+        assertEquals("", page.asText());
     }
 
     @Test
@@ -118,10 +121,13 @@ public class SoundsAgentActionTest extends TestWithTools {
         webClient.login("noconfigure");
 
         page = whyDoesntJenkinsRuleWebClientLetMeDoPostForPage(webClient, "descriptorByName/net.hurstfrost.hudson.sounds.SoundsAgentAction/testUrl?soundUrl=http://localhost:8080/");
-        assertEquals(page.getWebResponse().getStatusCode(), HttpURLConnection.HTTP_FORBIDDEN);
+        assertEquals(HttpURLConnection.HTTP_FORBIDDEN, page.getWebResponse().getStatusCode());
 
         page = whyDoesntJenkinsRuleWebClientLetMeDoPostForPage(webClient, "descriptorByName/net.hurstfrost.hudson.sounds.SoundsAgentAction/testSound?selectedSound=EXPLODE");
-        assertEquals(page.getWebResponse().getStatusCode(), HttpURLConnection.HTTP_FORBIDDEN);
+        assertEquals(HttpURLConnection.HTTP_FORBIDDEN, page.getWebResponse().getStatusCode());
+
+        page = whyDoesntJenkinsRuleWebClientLetMeDoPostForPage(webClient, "sounds/playSound?src=http://url");
+        assertEquals(HttpURLConnection.HTTP_FORBIDDEN, page.getWebResponse().getStatusCode());
     }
 
     @Test
@@ -132,6 +138,20 @@ public class SoundsAgentActionTest extends TestWithTools {
 
         webClient.assertFails("descriptorByName/net.hurstfrost.hudson.sounds.SoundsAgentAction/testUrl?soundUrl=http://localhost:8080/", HttpURLConnection.HTTP_BAD_METHOD);
         webClient.assertFails("descriptorByName/net.hurstfrost.hudson.sounds.SoundsAgentAction/testSound?selectedSound=EXPLODE", HttpURLConnection.HTTP_BAD_METHOD);
+        webClient.assertFails("sounds/playSound?src=EXPLODE&delay=1", HttpURLConnection.HTTP_BAD_METHOD);
+        webClient.assertFails("sounds/globalMute", HttpURLConnection.HTTP_BAD_METHOD);
+        webClient.assertFails("sounds/cancelSounds", HttpURLConnection.HTTP_BAD_METHOD);
+    }
+
+    @Test
+    public void jenkinsSoundsPage() throws Exception {
+        JenkinsRule.WebClient webClient = j.createWebClient();
+
+        webClient.login("configure");
+
+        HtmlPage page = webClient.goTo("sounds");
+
+        assertTrue(page.asText(), page.asText().contains("Sound output option in System Configuration (currently 'BROWSER')."));
     }
 
     @Test

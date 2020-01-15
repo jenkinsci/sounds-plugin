@@ -9,12 +9,12 @@
 			<l:tasks>
 				<l:task icon="images/24x24/up.gif" href="${rootURL}/" title="${%Back to Dashboard}" />
 				<j:if test="${h.hasPermission(it, it.PERMISSION)}">
-    				<l:task icon="plugin/sounds/icon/s_${it.globalMute?'off':'on'}_24x24.png" href="globalMute" title="${it.globalMute?'Enable':'Disable ALL'} sounds${it.globalMute?' (currently disabled)':''}" />
+    				<l:task icon="plugin/sounds/icon/s_${it.globalMute?'off':'on'}_24x24.png" href="globalMute" post="true" title="${it.globalMute?'Enable':'Disable ALL'} sounds${it.globalMute?' (currently disabled)':''}" />
 				</j:if>
 				<j:if test="${!it.globalMute}">
 					<l:task icon="plugin/sounds/icon/s_${it.localMute?'off':'on'}_24x24.png" href="localMute" title="Local mute${it.localMute?' (currently muted)':''}" />
     				<j:if test="${h.hasPermission(it, it.PERMISSION)}">
-    		 			<l:task icon="plugin/sounds/icon/s_off_24x24.png" href="cancelSounds" title="${%Cancel all playing sounds}" />
+    		 			<l:task icon="plugin/sounds/icon/s_off_24x24.png" href="cancelSounds" post="true" title="${%Cancel all playing sounds}" />
 	    			</j:if>
 				</j:if>
 			</l:tasks>
@@ -53,7 +53,7 @@
 					<ul>
 						<li>a Job Build action</li>
 						<li>a Job Post-build action (e.g. on failure)</li>
-						<li>by making an HTTP request to ${h.inferHudsonURL(request)}sounds/playSound?src=&amp;lt;URL&gt; (currently only supported in <span style="font-family:courier">BROWSER</span> mode)</li>
+						<li>by making an HTTP POST request to ${h.inferHudsonURL(request)}sounds/playSound?src=&amp;lt;URL&gt; (currently only supported in <span style="font-family:courier">BROWSER</span> mode)</li>
 					</ul>
 					<h2>Sound output:</h2>
 					Sound can be configured to be output to:
@@ -61,14 +61,13 @@
 					<li>the audio hardware of the Jenkins server host</li>
 					<li>an operating system pipe (OS dependent)</li>
 					<li>all compatible browsers on a Jenkins page</li>
-					<li>all compatible browsers on a page containing the Jenkins Sounds JSONP Agent (see <a href="${h.inferHudsonURL(request)}sounds/jsonpdemo">${h.inferHudsonURL(request)}sounds/jsonpdemo</a>)</li>
 					</ul>
 					<h2>Troubleshooting tips:</h2>
 					If sound does not work some of the checks below might lead you to a solution:
 					<ul>
 						<li>Check the system is configured properly:</li>
 						<ul>
-							<li>Sound output option in System Configuration (currently '<span style="font-family:courier">${it.soundsDescriptor.playMethod}</span>').</li>
+							<li>Sound output option in System Configuration (currently '<span style="font-family:courier">${it.playMethod}</span>').</li>
 							<ul>
 								<li>LOCAL hardware - check your sound hardware and that it is detected by Java.</li>
 								<li>BROWSER - check Hudson URL (currently <a href="${h.inferHudsonURL(request)}">${h.inferHudsonURL(request)}</a>).</li>
