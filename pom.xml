@@ -39,8 +39,8 @@
 	</build>
 
 	<scm>
-		<connection>scm:git:https://github.com/jenkinsci/sounds-plugin</connection>
-		<developerConnection>scm:git:https://github.com/jenkinsci/sounds-plugin</developerConnection>
+		<connection>scm:git:ssh://git@github.com:jenkinsci/sounds-plugin.git</connection>
+		<developerConnection>scm:git:ssh://git@github.com:jenkinsci/sounds-plugin.git</developerConnection>
 		<url>https://github.com/jenkinsci/sounds-plugin</url>
 		<tag>HEAD</tag>
 	</scm>
