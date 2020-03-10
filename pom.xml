@@ -22,7 +22,7 @@
 	<url>https://github.com/jenkinsci/sounds-plugin</url>
 
 	<artifactId>sounds</artifactId>
-	<version>0.7-SNAPSHOT</version>
+	<version>0.6.1</version>
 	<packaging>hpi</packaging>
 	<name>Jenkins Sounds plugin</name>
 
@@ -42,7 +42,7 @@
 		<connection>scm:git:ssh://git@github.com/jenkinsci/sounds-plugin.git</connection>
 		<developerConnection>scm:git:ssh://git@github.com/jenkinsci/sounds-plugin.git</developerConnection>
 		<url>https://github.com/jenkinsci/sounds-plugin</url>
-		<tag>HEAD</tag>
+		<tag>sounds-0.6.1</tag>
 	</scm>
 
 	<repositories>
