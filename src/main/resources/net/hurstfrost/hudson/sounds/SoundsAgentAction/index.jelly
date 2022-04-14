@@ -7,7 +7,7 @@
 	<l:layout title="Sounds">
 		<l:side-panel>
 			<l:tasks>
-				<l:task icon="images/24x24/up.gif" href="${rootURL}/" title="${%Back to Dashboard}" />
+				<l:task icon="icon-up icon-md" href="${rootURL}/" title="${%Back to Dashboard}" />
 				<j:if test="${h.hasPermission(it, it.PERMISSION)}">
     				<l:task icon="plugin/sounds/icon/s_${it.globalMute?'off':'on'}_24x24.png" href="globalMute" post="true" title="${it.globalMute?'Enable':'Disable ALL'} sounds${it.globalMute?' (currently disabled)':''}" />
 				</j:if>
